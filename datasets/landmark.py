@@ -53,7 +53,6 @@ class Landmark(Dataset):
         fname = dp['image_path']
         keypoints = dp['keypoints']
         bbox = dp['bbox']
-        print("landmarks dp image path", fname, flush=True)
         if keypoints is not None:
             if ".jpg" in fname:
                 image = jpeg.imread(fname)
@@ -62,7 +61,7 @@ class Landmark(Dataset):
                 image = cv2.imread(fname)
             label = np.array(keypoints, dtype=np.float).reshape((-1, 2))
             bbox = np.array(bbox)
-            print("image", type(image))
+            print("image", type(image), fname)
             crop_image, label = self.augmentationCropImage(image, bbox, label, self.training_flag)
 
             if self.training_flag:
