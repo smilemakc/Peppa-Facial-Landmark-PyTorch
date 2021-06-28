@@ -1,3 +1,5 @@
+import os
+
 import torch
 from torch.utils.data import DataLoader
 from datasets.landmark import Landmark
@@ -139,7 +141,7 @@ def eval(epoch):
 
 
 if __name__ == '__main__':
-    checkpoint = None
+    checkpoint = os.environ.get("PEPPA_START_CHECKPOINT", None)
     torch.backends.cudnn.benchmark = True
     train_dataset = Landmark("train.json", input_size, True)
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, num_workers=4)
