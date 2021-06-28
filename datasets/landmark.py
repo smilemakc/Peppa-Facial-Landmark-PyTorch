@@ -49,12 +49,11 @@ class Landmark(Dataset):
 
     def __getitem__(self, item):
         """Data augmentation function."""
-        print("landmarks ", item, flush=True)
         dp = self.lst[item]
-        print("landmarks dp", dp, flush=True)
         fname = dp['image_path']
         keypoints = dp['keypoints']
         bbox = dp['bbox']
+        print("landmarks dp image path", fname, flush=True)
         if keypoints is not None:
             if ".jpg" in fname:
                 image = jpeg.imread(fname)
@@ -63,6 +62,7 @@ class Landmark(Dataset):
                 image = cv2.imread(fname)
             label = np.array(keypoints, dtype=np.float).reshape((-1, 2))
             bbox = np.array(bbox)
+            print("image", type(image))
             crop_image, label = self.augmentationCropImage(image, bbox, label, self.training_flag)
 
             if self.training_flag:
