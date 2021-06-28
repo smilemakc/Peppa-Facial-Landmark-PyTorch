@@ -10,7 +10,8 @@ from tqdm import tqdm
 i decide to merge more data from CelebA, the data anns will be complex, so json maybe a better way. 
 '''
 
-data_dir = 'H:/datasets/300W_All_Orig'  ########points to your director,300w
+# data_dir = 'H:/datasets/300W_All_Orig'  ########points to your director,300w
+data_dir = os.environ.get("PEPPA_DATASETS_PATH", "ds")  ########points to your director,300w
 
 train_json = 'train.json'
 val_json = 'val.json'
