@@ -49,7 +49,9 @@ class Landmark(Dataset):
 
     def __getitem__(self, item):
         """Data augmentation function."""
+        print("landmarks ", item, flush=True)
         dp = self.lst[item]
+        print("landmarks dp", dp, flush=True)
         fname = dp['image_path']
         keypoints = dp['keypoints']
         bbox = dp['bbox']
