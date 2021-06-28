@@ -61,7 +61,7 @@ class Landmark(Dataset):
                 image = cv2.imread(fname)
             label = np.array(keypoints, dtype=np.float).reshape((-1, 2))
             bbox = np.array(bbox)
-            print("image", type(image), fname)
+            # print("image", type(image), fname)
             crop_image, label = self.augmentationCropImage(image, bbox, label, self.training_flag)
 
             if self.training_flag:
