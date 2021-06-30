@@ -139,7 +139,7 @@ def eval(epoch):
     print(
         "Eval Avg Loss  -- Total: {:.4f} Landmark: {:.4f} Poss: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f}".format(
             avg_total_loss, avg_landmark_loss, avg_loss_pose, avg_leye_loss, avg_reye_loss, avg_mouth_loss))
-    torch.save(model.state_dict(), open("weights/slim128_epoch_{}_{:.4f}.pth".format(epoch, avg_landmark_loss), "wb"))
+    torch.save(model.state_dict(), open("weights/slim{}_epoch_{}_{:.4f}.pth".format(input_size[0], epoch, avg_landmark_loss), "wb"))
 
 
 if __name__ == '__main__':
