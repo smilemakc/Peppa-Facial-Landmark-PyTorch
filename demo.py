@@ -10,12 +10,13 @@ Three detector options:
 MNN detector is only tested on Windows 10 and Centos7.
 '''
 
-# from detector import Detector
-from mnn_detector import Detector
+from detector import Detector
+# from mnn_detector import Detector
 # from onnx_detector import Detector
 import numpy as np
 
 face_detector = FaceDetector()
+# lmk_detector = Detector((128, 128))
 lmk_detector = Detector()
 cap = cv2.VideoCapture(0)
 ret, frame = cap.read()

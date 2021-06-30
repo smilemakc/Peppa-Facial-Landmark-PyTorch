@@ -82,5 +82,6 @@ if __name__ == '__main__':
     model = Slim()
     model.eval()
     x = torch.randn(1, 3, 160, 160)
+    # x = torch.randn(1, 3, 128, 128)
     flops, params = profile(model, inputs=(x,))
     print(flops)
