@@ -7,5 +7,8 @@ opencv-python==4.5.2.54
 protobuf==3.17.3
 six==1.16.0
 torch==1.9.0
-tqdm
+tqdm~=4.55.0
 typing-extensions==3.10.0.0
+scipy~=1.5.4
+visdom~=0.1.8.9
+ignite~=1.1.0
