@@ -12,3 +12,4 @@ typing-extensions==3.10.0.0
 scipy~=1.5.4
 visdom~=0.1.8.9
 ignite~=1.1.0
+thop
