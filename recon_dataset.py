@@ -17,7 +17,7 @@ def do(filename):
         image_path = Path(data['image_path'])
         landmarks = np.array(data['keypoints'])
         bbox = np.array(data['bbox'])
-        img = cv2.imread(image_path)
+        img = cv2.imread(image_path.as_posix())
         img_h, img_w = img.shape[0], img.shape[1]
         center = np.array([bbox[2] + bbox[0], bbox[1] + bbox[3]]) / 2
         w, h = bbox[2] - bbox[0], bbox[3] - bbox[1]
