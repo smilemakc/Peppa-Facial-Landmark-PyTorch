@@ -4,6 +4,7 @@ from torch.utils.data import DataLoader
 from datasets.landmark import Landmark
 from utils.wing_loss import WingLoss
 from models.slim import Slim
+import sys
 import time
 from utils.consoler import rewrite, next_line
 import visdom
@@ -12,12 +13,13 @@ from benchmarks_nme import calculate_nme
 import argparse
 
 viz = visdom.Visdom()
-# os.system("python -m visdom.server")  # better use at terminal
-os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # for CPU
+# os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # for CPU
+os.system("nohup python -m visdom.server > visdom.log &")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_size", default=160, type=int)
 parser.add_argument("--batch_size", default=256, type=int)
+parser.add_argument("--name", default="slim", type=str)
 args = parser.parse_args()
 
 lr_decay_every_epoch = [1, 25, 35, 75, 150]
@@ -291,9 +293,7 @@ def evaluate(epoch):
     torch.save(
         model.state_dict(),
         open(
-            "weights/slim{}_epoch_{}_{:.4f}.pth".format(
-                input_size[0], epoch, avg_landmark_loss
-            ),
+            f"weights/{args.name}_{input_size[0]}x{input_size[0]}_epoch_{epoch}_{avg_landmark_loss:.4f}.pth",
             "wb",
         ),
     )
