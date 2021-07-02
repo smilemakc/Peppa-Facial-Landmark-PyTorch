@@ -4,14 +4,16 @@ from torch.utils.data import DataLoader
 from datasets.landmark import Landmark
 from utils.wing_loss import WingLoss
 from models.slim import Slim
-import sys
 import time
 from utils.consoler import rewrite, next_line
 import visdom
+import numpy as np
+from benchmarks_nme import calculate_nme
 import argparse
 
 viz = visdom.Visdom()
-os.system("python -m visdom.server")
+# os.system("python -m visdom.server")  # better use at terminal
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'  # for CPU
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_size", default=160, type=int)
@@ -46,6 +48,9 @@ def init_visdom():
             title="eval_loss", legend=["landmark", "pose", "leye", "reye", "mouth"]
         ),
     )
+    viz.line([0.], [0], win="train_acc", opts=dict(title="train_acc"))
+    viz.line([0.], [0], win="eval_acc", opts=dict(title="eval_acc"))
+    viz.line([0.], [0], win="lr", opts=dict(title="lr"))
 
 
 class Metrics:
@@ -55,30 +60,27 @@ class Metrics:
         self.leye_loss = 0
         self.reye_loss = 0
         self.mouth_loss = 0
+        self.accuracy = 0
         self.counter = 0
 
-    def update(self, landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss):
+    def update(self, landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss, accuracy):
         self.landmark_loss += landmark_loss.item()
         self.loss_pose += loss_pose.item()
         self.leye_loss += leye_loss.item()
         self.reye_loss += reye_loss.item()
         self.mouth_loss += mouth_loss.item()
+        self.accuracy += accuracy.item()
         self.counter += 1
 
     def summary(self):
-        total = (
-            self.landmark_loss
-            + self.loss_pose
-            + self.leye_loss
-            + self.reye_loss
-            + self.mouth_loss
-        ) / self.counter
+        total = (self.landmark_loss + self.loss_pose + self.leye_loss + self.reye_loss + self.mouth_loss) / self.counter
         lands = self.landmark_loss / self.counter
         pose = self.loss_pose / self.counter
         leye = self.leye_loss / self.counter
         reye = self.reye_loss / self.counter
         mouth = self.mouth_loss / self.counter
-        return total, lands, pose, leye, reye, mouth
+        acc = self.accuracy / self.counter
+        return total, lands, pose, leye, reye, mouth, acc
 
 
 def decay(epoch):
@@ -118,6 +120,21 @@ def calculate_loss(predict_keypoints, label_keypoints):
     return loss_sum, landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss
 
 
+def calculate_accuracy(predict_keypoints, label_keypoints, sz, normolization=False):
+    if not normolization:
+        sz = 1
+    landmark_label = label_keypoints[:, 0:136]
+    landmark_predict = predict_keypoints[:, 0:136]
+    n = landmark_label.shape[1] / 2
+    nme_all = []
+    for label, predict in zip(landmark_label, landmark_predict):
+        label = label.reshape((-1, 2))
+        predict = predict.reshape((-1, 2))
+        nme = calculate_nme(label, predict, sz, n)
+        nme_all.append(nme)
+    return 1 - np.mean(nme_all)
+
+
 def train(epoch):
     model.train()
     metrics = Metrics()
@@ -127,9 +144,10 @@ def train(epoch):
         "==================================Training Phase================================="
     )
     print("Current LR:{}".format(list(optim.param_groups)[0]["lr"]))
+    viz.line([list(optim.param_groups)[0]["lr"]], [epoch], win="lr", update="append")
     for i, (imgs, labels) in enumerate(train_loader):
-        imgs = imgs.cuda()
-        labels = labels.cuda()
+        # imgs = imgs.cuda()  # no need for CPU
+        # labels = labels.cuda()  # no need for CPU
         optim.zero_grad()
         preds = model(imgs)
         (
@@ -140,7 +158,8 @@ def train(epoch):
             reye_loss,
             mouth_loss,
         ) = calculate_loss(preds, labels)
-        metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss)
+        acc = calculate_accuracy(preds, labels, imgs.shape[-1], normolization=False)
+        metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss, acc)
         loss.backward()
         optim.step()
 
@@ -149,9 +168,10 @@ def train(epoch):
         speed = (i + 1) / (end - start)
         progress = total_samples / len(train_dataset)
         rewrite(
-            "Epoch: {} Loss -- Total: {:.4f} Landmark: {:.4f} Pose: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f} "
-            "Progress: {:.4f} Speed: {:.4f}it/s".format(
+            "Epoch: {} Acc -- {:.4f}; Loss -- Total: {:.4f} Landmark: {:.4f} Pose: {:.4f} LEye: {:.4f} REye: {:.4f} "
+            "Mouth: {:.4f} Progress: {:.4f} Speed: {:.4f}it/s".format(
                 epoch,
+                acc.item(),
                 loss.item(),
                 landmark_loss.item(),
                 loss_pose.item(),
@@ -164,16 +184,19 @@ def train(epoch):
         )
     next_line()
     (
-        avg_total_loss,
+        avg_loss,
         avg_landmark_loss,
         avg_loss_pose,
         avg_leye_loss,
         avg_reye_loss,
         avg_mouth_loss,
+        avg_ac
     ) = metrics.summary()
     print(
-        "Train Avg Loss -- Total: {:.4f} Landmark: {:.4f} Poss: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f}".format(
-            avg_total_loss,
+        "Train Avg Acc -- {:.4f}; Avg Loss -- Total: {:.4f} Landmark: {:.4f} Poss: {:.4f} LEye: {:.4f} REye: {:.4f} "
+        "Mouth: {:.4f}".format(
+            avg_ac,
+            avg_loss,
             avg_landmark_loss,
             avg_loss_pose,
             avg_leye_loss,
@@ -182,7 +205,7 @@ def train(epoch):
         )
     )
 
-    viz.line([avg_total_loss], [epoch], win="train_loss_total", update="append")
+    viz.line([avg_loss], [epoch], win="train_loss_total", update="append")
     viz.line(
         [
             [
@@ -197,6 +220,7 @@ def train(epoch):
         win="train_loss",
         update="append",
     )
+    viz.line([avg_ac], [epoch],  win="train_acc", update="append")
 
 
 def evaluate(epoch):
@@ -208,8 +232,8 @@ def evaluate(epoch):
         "==================================Eval Phase================================="
     )
     for i, (imgs, labels) in enumerate(val_loader):
-        imgs = imgs.cuda()
-        labels = labels.cuda()
+        # imgs = imgs.cuda()  # no need for CPU
+        # labels = labels.cuda()  # no need for CPU
         with torch.no_grad():
             preds = model(imgs)
             (
@@ -220,15 +244,17 @@ def evaluate(epoch):
                 reye_loss,
                 mouth_loss,
             ) = calculate_loss(preds, labels)
-        metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss)
+            acc = calculate_accuracy(preds, labels, imgs.shape[-1], normolization=False)
+        metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss, acc)
         total_samples += len(imgs)
         end = time.time()
         speed = (i + 1) / (end - start)
         progress = total_samples / len(val_dataset)
         rewrite(
-            "Epoch: {} Loss -- Total: {:.4f} Landmark: {:.4f} Pose: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f} "
-            "Progress: {:.4f} Speed: {:.4f}it/s".format(
+            "Epoch: {} Acc -- {:.4f}; Loss -- Total: {:.4f} Landmark: {:.4f} Pose: {:.4f} LEye: {:.4f} REye: {:.4f} "
+            "Mouth: {:.4f} Progress: {:.4f} Speed: {:.4f}it/s".format(
                 epoch,
+                acc.item(),
                 loss.item(),
                 landmark_loss.item(),
                 loss_pose.item(),
@@ -242,16 +268,19 @@ def evaluate(epoch):
 
     next_line()
     (
-        avg_total_loss,
+        avg_loss,
         avg_landmark_loss,
         avg_loss_pose,
         avg_leye_loss,
         avg_reye_loss,
         avg_mouth_loss,
+        avg_ac,
     ) = metrics.summary()
     print(
-        "Eval Avg Loss  -- Total: {:.4f} Landmark: {:.4f} Poss: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f}".format(
-            avg_total_loss,
+        "Eval Avg Acc -- {:.4f}; Avg Loss  -- Total: {:.4f} Landmark: {:.4f} Poss: {:.4f} LEye: {:.4f} REye: {:.4f} "
+        "Mouth: {:.4f}".format(
+            avg_ac,
+            avg_loss,
             avg_landmark_loss,
             avg_loss_pose,
             avg_leye_loss,
@@ -269,7 +298,7 @@ def evaluate(epoch):
         ),
     )
 
-    viz.line([avg_total_loss], [epoch], win="eval_loss_total", update="append")
+    viz.line([avg_loss], [epoch], win="eval_loss_total", update="append")
     viz.line(
         [
             [
@@ -284,23 +313,25 @@ def evaluate(epoch):
         win="eval_loss",
         update="append",
     )
+    viz.line([avg_ac], [epoch], win="eval_acc", update="append")
 
 
 if __name__ == "__main__":
     checkpoint = os.environ.get("PEPPA_START_CHECKPOINT", None)
     torch.backends.cudnn.benchmark = True
     train_dataset = Landmark("train.json", input_size, True)
+    # num_workers=0 for CPU
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=0
     )
     val_dataset = Landmark("val.json", input_size, False)
     val_loader = DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, num_workers=4
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=0
     )
 
     model = Slim()
     model.train()
-    model.cuda()
+    # model.cuda()  # no need for CPU
     if checkpoint is not None:
         model.load_state_dict(torch.load(checkpoint))
         start_epoch = int(checkpoint.split("_")[-2]) + 1
