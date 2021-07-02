@@ -10,6 +10,16 @@ from tqdm import tqdm
 new_ds_path = Path("recon_ds")
 
 
+def rewrite_path(path):
+    path = Path(path)
+    parts = path.parent.parts[1:]
+    new_parent = new_ds_path / f"{parts[0]}_Out"
+    new_path = new_parent / "/".join(parts[1:]) / path.name
+    if not new_path.parent.exists():
+        new_path.parent.mkdir(parents=True, exist_ok=True)
+    return new_path
+
+
 def do(filename):
     gogo = json.load(open(filename))
     result = []
@@ -37,12 +47,7 @@ def do(filename):
         data['bbox'] = bbox.tolist()
         data['keypoints'] = landmarks.tolist()
         img = img[new_bbox[1]:new_bbox[3], new_bbox[0]:new_bbox[2]]
-        # output_path = os.path.join("/".join(image_path.split("/")[0:-4]), image_path.split("/")[-4] + "_Output",
-        #                            "/".join(image_path.split("/")[-3:]))
-        # output_dir = "/".join(output_path.split("/")[0:-1])
-        # if not os.path.exists(output_dir):
-        #     os.makedirs(output_dir)
-        output_path = new_ds_path / image_path.name
+        output_path = rewrite_path(image_path)
         data['image_path'] = output_path.as_posix()
         cv2.imwrite(output_path.as_posix(), img)
         result.append(data)
