@@ -1,5 +1,4 @@
 import os
-
 import torch
 from torch.utils.data import DataLoader
 from datasets.landmark import Landmark
@@ -8,19 +7,31 @@ from models.slim import Slim
 import sys
 import time
 from utils.consoler import rewrite, next_line
+import visdom
+
+viz = visdom.Visdom()
+os.system("python -m visdom.server")
 
 lr_decay_every_epoch = [1, 25, 35, 75, 150]
 lr_value_every_epoch = [0.00001, 0.0001, 0.00005, 0.00001, 0.000001]
 weight_decay_factor = 5.e-4
 l2_regularization = weight_decay_factor
-input_size = (160, 160)
-batch_size = 256
-# if "win32" in sys.platform:
-#     input_size = (160, 160)
-#     batch_size = 128
-# else:
-#     input_size = (128, 128)
-#     batch_size = 256
+
+if "win32" in sys.platform:
+    input_size = (160, 160)
+    batch_size = 128
+else:
+    input_size = (128, 128)
+    batch_size = 256
+
+
+def init_visdom():
+    viz.line([0.], [0], win='train_loss_total', opts=dict(title='train_loss_total'))
+    viz.line([[0., 0., 0., 0., 0.]], [0], win='train_loss',
+             opts=dict(title='train_loss', legend=["landmark", "pose", "leye", "reye", "mouth"]))
+    viz.line([0.], [0], win='eval_loss_total', opts=dict(title='eval_loss_total'))
+    viz.line([[0., 0., 0., 0., 0.]], [0], win='eval_loss',
+             opts=dict(title='eval_loss', legend=["landmark", "pose", "leye", "reye", "mouth"]))
 
 
 class Metrics:
@@ -42,7 +53,12 @@ class Metrics:
 
     def summary(self):
         total = (self.landmark_loss + self.loss_pose + self.leye_loss + self.reye_loss + self.mouth_loss) / self.counter
-        return total, self.landmark_loss / self.counter, self.loss_pose / self.counter, self.leye_loss / self.counter, self.reye_loss / self.counter, self.mouth_loss / self.counter
+        lands = self.landmark_loss / self.counter
+        pose = self.loss_pose / self.counter
+        leye = self.leye_loss / self.counter
+        reye = self.reye_loss / self.counter
+        mouth = self.mouth_loss / self.counter
+        return total, lands, pose, leye, reye, mouth
 
 
 def decay(epoch):
@@ -78,7 +94,8 @@ def calculate_loss(predict_keypoints, label_keypoints):
     mouth_loss = bce_loss_fn(mouth_cls_predict, mouth_cls_label)
     mouth_loss_big = bce_loss_fn(big_mouth_cls_predict, big_mouth_cls_label)
     mouth_loss = 0.5 * (mouth_loss + mouth_loss_big)
-    return landmark_loss + loss_pose + leye_loss + reye_loss + mouth_loss, landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss
+    loss_sum = landmark_loss + loss_pose + leye_loss + reye_loss + mouth_loss
+    return loss_sum, landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss
 
 
 def train(epoch):
@@ -97,12 +114,14 @@ def train(epoch):
         metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss)
         loss.backward()
         optim.step()
+
         total_samples += len(imgs)
         end = time.time()
         speed = (i + 1) / (end - start)
         progress = total_samples / len(train_dataset)
         rewrite(
-            "Epoch: {} Loss -- Total: {:.4f} Landmark: {:.4f} Pose: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f} Progress: {:.4f} Speed: {:.4f}it/s".format(
+            "Epoch: {} Loss -- Total: {:.4f} Landmark: {:.4f} Pose: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f} "
+            "Progress: {:.4f} Speed: {:.4f}it/s".format(
                 epoch, loss.item(), landmark_loss.item(), loss_pose.item(), leye_loss.item(), reye_loss.item(),
                 mouth_loss.item(), progress, speed))
     next_line()
@@ -111,8 +130,13 @@ def train(epoch):
         "Train Avg Loss -- Total: {:.4f} Landmark: {:.4f} Poss: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f}".format(
             avg_total_loss, avg_landmark_loss, avg_loss_pose, avg_leye_loss, avg_reye_loss, avg_mouth_loss))
 
+    viz.line([avg_total_loss], [epoch],
+             win='train_loss_total', update='append')
+    viz.line([[avg_landmark_loss, avg_loss_pose, avg_leye_loss, avg_reye_loss, avg_mouth_loss]], [epoch],
+             win='train_loss', update='append')
 
-def eval(epoch):
+
+def evaluate(epoch):
     model.eval()
     metrics = Metrics()
     start = time.time()
@@ -130,7 +154,8 @@ def eval(epoch):
         speed = (i + 1) / (end - start)
         progress = total_samples / len(val_dataset)
         rewrite(
-            "Epoch: {} Loss -- Total: {:.4f} Landmark: {:.4f} Pose: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f} Progress: {:.4f} Speed: {:.4f}it/s".format(
+            "Epoch: {} Loss -- Total: {:.4f} Landmark: {:.4f} Pose: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f} "
+            "Progress: {:.4f} Speed: {:.4f}it/s".format(
                 epoch, loss.item(), landmark_loss.item(), loss_pose.item(), leye_loss.item(), reye_loss.item(),
                 mouth_loss.item(), progress, speed))
 
@@ -139,7 +164,13 @@ def eval(epoch):
     print(
         "Eval Avg Loss  -- Total: {:.4f} Landmark: {:.4f} Poss: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f}".format(
             avg_total_loss, avg_landmark_loss, avg_loss_pose, avg_leye_loss, avg_reye_loss, avg_mouth_loss))
-    torch.save(model.state_dict(), open("weights/slim{}_epoch_{}_{:.4f}.pth".format(input_size[0], epoch, avg_landmark_loss), "wb"))
+    torch.save(model.state_dict(), open("weights/slim{}_epoch_{}_{:.4f}.pth".format(
+        input_size[0], epoch, avg_landmark_loss), "wb"))
+
+    viz.line([avg_total_loss], [epoch],
+             win='eval_loss_total', update='append')
+    viz.line([[avg_landmark_loss, avg_loss_pose, avg_leye_loss, avg_reye_loss, avg_mouth_loss]], [epoch],
+             win='eval_loss', update='append')
 
 
 if __name__ == '__main__':
@@ -163,9 +194,12 @@ if __name__ == '__main__':
     mse_loss_fn = torch.nn.MSELoss()
     bce_loss_fn = torch.nn.BCEWithLogitsLoss()
 
+    init_visdom()
+
     optim = torch.optim.Adam(model.parameters(), lr=lr_value_every_epoch[0], weight_decay=5e-4)
-    for epoch in range(start_epoch, 150):
+
+    for ep in range(start_epoch, 150):
         for param_group in optim.param_groups:
-            param_group['lr'] = decay(epoch)
-        train(epoch)
-        eval(epoch)
+            param_group['lr'] = decay(ep)
+        train(ep)
+        evaluate(ep)
