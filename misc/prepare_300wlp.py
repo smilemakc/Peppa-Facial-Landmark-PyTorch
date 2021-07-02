@@ -49,8 +49,8 @@ def flip_points(landmarks):
 
 subsets = ["AFW", "AFW_Flip", "HELEN", "HELEN_Flip", "IBUG", "IBUG_Flip", "LFPW", "LFPW_Flip"]
 
-base_path = "H:\\datasets\\300W_LP"
-output_base = "H:\\datasets\\300W_LP_Out"
+base_path = "Downloads/datasets/300W_LP"
+output_base = "Downloads/datasets/300W_LP_Out"
 for subset in subsets:
     subset_path = os.path.join(base_path, subset)
     img_files = filter(lambda x: ".jpg" in x, os.listdir(subset_path))

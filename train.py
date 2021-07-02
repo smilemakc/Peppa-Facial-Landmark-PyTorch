@@ -48,13 +48,13 @@ class Metrics:
 def decay(epoch):
     if epoch < lr_decay_every_epoch[0]:
         return lr_value_every_epoch[0]
-    if epoch >= lr_decay_every_epoch[0] and epoch < lr_decay_every_epoch[1]:
+    if lr_decay_every_epoch[0] <= epoch < lr_decay_every_epoch[1]:
         return lr_value_every_epoch[1]
-    if epoch >= lr_decay_every_epoch[1] and epoch < lr_decay_every_epoch[2]:
+    if lr_decay_every_epoch[1] <= epoch < lr_decay_every_epoch[2]:
         return lr_value_every_epoch[2]
-    if epoch >= lr_decay_every_epoch[2] and epoch < lr_decay_every_epoch[3]:
+    if lr_decay_every_epoch[2] <= epoch < lr_decay_every_epoch[3]:
         return lr_value_every_epoch[3]
-    if epoch >= lr_decay_every_epoch[3] and epoch < lr_decay_every_epoch[4]:
+    if lr_decay_every_epoch[3] <= epoch < lr_decay_every_epoch[4]:
         return lr_value_every_epoch[4]
 
 
