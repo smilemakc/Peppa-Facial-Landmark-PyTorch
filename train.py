@@ -4,7 +4,6 @@ from torch.utils.data import DataLoader
 from datasets.landmark import Landmark
 from utils.wing_loss import WingLoss
 from models.slim import Slim
-import sys
 import time
 from utils.consoler import rewrite, next_line
 import visdom
@@ -149,8 +148,8 @@ def train(epoch):
     print("Current LR:{}".format(list(optim.param_groups)[0]["lr"]))
     viz.line([list(optim.param_groups)[0]["lr"]], [epoch], win="lr", update="append")
     for i, (imgs, labels) in enumerate(train_loader):
-        # imgs = imgs.cuda()  # no need for CPU
-        # labels = labels.cuda()  # no need for CPU
+        imgs = imgs.cuda()  # no need for CPU
+        labels = labels.cuda()  # no need for CPU
         optim.zero_grad()
         preds = model(imgs)
         (
@@ -235,8 +234,8 @@ def evaluate(epoch):
         "==================================Eval Phase================================="
     )
     for i, (imgs, labels) in enumerate(val_loader):
-        imgs = imgs.cuda()
-        labels = labels.cuda()
+        imgs = imgs.cuda()  # no need for CPU
+        labels = labels.cuda()  # no need for CPU
         with torch.no_grad():
             preds = model(imgs)
             (
@@ -323,16 +322,16 @@ if __name__ == "__main__":
     train_dataset = Landmark("train.json", input_size, True)
     # num_workers=0 for CPU
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=0
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4
     )
     val_dataset = Landmark("val.json", input_size, False)
     val_loader = DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, num_workers=0
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=4
     )
 
     model = Slim()
     model.train()
-    model.cuda()
+    model.cuda()  # no need for CPU
     if checkpoint is not None:
         model.load_state_dict(torch.load(checkpoint))
         start_epoch = int(checkpoint.split("_")[-2]) + 1
