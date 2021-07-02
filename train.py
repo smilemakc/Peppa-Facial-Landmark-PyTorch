@@ -11,7 +11,7 @@ import visdom
 import argparse
 
 viz = visdom.Visdom()
-os.system("python -m visdom.server")
+os.system("nohup python -m visdom.server > visdom.log &")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_size", default=160, type=int)
