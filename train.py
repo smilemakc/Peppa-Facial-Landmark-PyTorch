@@ -126,7 +126,7 @@ def calculate_loss(predict_keypoints, label_keypoints):
 
 
 def calculate_accuracy(predict_keypoints, label_keypoints, sz, normolization=False):
-    return 0
+    return np.array([0])
     # if not normolization:
     #     sz = 1
     # landmark_label = label_keypoints[:, 0:136]
