@@ -10,8 +10,10 @@ from utils.consoler import rewrite, next_line
 import visdom
 import argparse
 
+# TODO: that seems is no good (runs server in the train script)
+os.system("nohup python3 -m visdom.server --hostname 0.0.0.0 --port 8097 > visdom.log &")
+time.sleep(2)
 viz = visdom.Visdom()
-os.system("nohup python -m visdom.server > visdom.log &")
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_size", default=160, type=int)
