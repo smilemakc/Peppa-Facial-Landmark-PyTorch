@@ -12,7 +12,7 @@ from benchmarks_nme import calculate_nme
 import argparse
 
 # TODO: that seems is no good (runs server in the train script)
-os.system("nohup python3 -m visdom.server --hostname 0.0.0.0 --port 8097 > visdom.log &")
+os.system("nohup python3 -m visdom.server --hostname 0.0.0.0 > visdom.log &")
 time.sleep(2)
 viz = visdom.Visdom()
 
