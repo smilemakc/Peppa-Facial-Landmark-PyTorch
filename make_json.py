@@ -25,9 +25,7 @@ big_mouth_open_thres = 0.08
 
 pic_list = []
 for root, _, files in os.walk(data_dir):
-    for file in files:
-        if Path(file).suffix in [".jpg", ".jpeg", ".png"]:
-            pic_list.append(os.path.join(root, file))
+    pic_list += [os.path.join(root, file) for file in files if Path(file).suffix in [".jpg", ".jpeg", ".png"]]
 
 random.shuffle(pic_list)
 ratio = 0.95

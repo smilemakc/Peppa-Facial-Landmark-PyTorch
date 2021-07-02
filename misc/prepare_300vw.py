@@ -17,12 +17,12 @@ def draw_pts(pts: np.array, frame: np.array) -> None:
         frame = cv2.circle(frame, tuple(point), 1, (255, 255, 0), 4)
 
 
-def process_video(path: Union[Path, PosixPath, str]):
-    cap = cv2.VideoCapture(str(path / "vid.avi"))
+def process_video(path: Union[Path, PosixPath, str]) -> int:
     if path.is_file():
         return 0
+    cap = cv2.VideoCapture(str(path / "vid.avi"))
     frames_path = path / "annot"
-    if not (frames_path).exists():
+    if not frames_path.exists():
         frames_path.mkdir()
     frame_number = 1
     while True:
