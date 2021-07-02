@@ -1,15 +1,20 @@
 import json
 import os
+import sys
+from pathlib import Path
+
 import cv2
 import numpy as np
 from tqdm import tqdm
+
+new_ds_path = Path("recon_ds")
 
 
 def do(filename):
     gogo = json.load(open(filename))
     result = []
     for data in tqdm(gogo):
-        image_path = data['image_path'].replace("\\", "/")
+        image_path = Path(data['image_path'])
         landmarks = np.array(data['keypoints'])
         bbox = np.array(data['bbox'])
         img = cv2.imread(image_path)
@@ -32,16 +37,22 @@ def do(filename):
         data['bbox'] = bbox.tolist()
         data['keypoints'] = landmarks.tolist()
         img = img[new_bbox[1]:new_bbox[3], new_bbox[0]:new_bbox[2]]
-        output_path = os.path.join("/".join(image_path.split("/")[0:-4]), image_path.split("/")[-4] + "_Output",
-                                   "/".join(image_path.split("/")[-3:]))
-        data['image_path'] = output_path
-        output_dir = "/".join(output_path.split("/")[0:-1])
-        if not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        cv2.imwrite(output_path, img)
+        # output_path = os.path.join("/".join(image_path.split("/")[0:-4]), image_path.split("/")[-4] + "_Output",
+        #                            "/".join(image_path.split("/")[-3:]))
+        # output_dir = "/".join(output_path.split("/")[0:-1])
+        # if not os.path.exists(output_dir):
+        #     os.makedirs(output_dir)
+        output_path = new_ds_path / image_path.name
+        data['image_path'] = output_path.as_posix()
+        cv2.imwrite(output_path.as_posix(), img)
         result.append(data)
     json.dump(result, open(filename, "w"))
 
 
-do("train.json")
-do("val.json")
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        new_ds_path = Path(sys.argv[1])
+    if not new_ds_path.exists():
+        new_ds_path.mkdir()
+    do("train.json")
+    do("val.json")
