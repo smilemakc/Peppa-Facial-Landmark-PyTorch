@@ -126,18 +126,19 @@ def calculate_loss(predict_keypoints, label_keypoints):
 
 
 def calculate_accuracy(predict_keypoints, label_keypoints, sz, normolization=False):
-    if not normolization:
-        sz = 1
-    landmark_label = label_keypoints[:, 0:136]
-    landmark_predict = predict_keypoints[:, 0:136]
-    n = landmark_label.shape[1] / 2
-    nme_all = []
-    for label, predict in zip(landmark_label, landmark_predict):
-        label = label.reshape((-1, 2))
-        predict = predict.reshape((-1, 2))
-        nme = calculate_nme(label, predict, sz, n)
-        nme_all.append(nme)
-    return 1 - np.mean(nme_all)
+    return 0
+    # if not normolization:
+    #     sz = 1
+    # landmark_label = label_keypoints[:, 0:136]
+    # landmark_predict = predict_keypoints[:, 0:136]
+    # n = landmark_label.shape[1] / 2
+    # nme_all = []
+    # for label, predict in zip(landmark_label, landmark_predict):
+    #     label = label.reshape((-1, 2))
+    #     predict = predict.reshape((-1, 2))
+    #     nme = calculate_nme(label, predict, sz, n)
+    #     nme_all.append(nme)
+    # return 1 - np.mean(nme_all)
 
 
 def train(epoch):
