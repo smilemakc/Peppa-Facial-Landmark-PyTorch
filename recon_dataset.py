@@ -30,7 +30,7 @@ def do(filename):
         y1 = max(0, y1)
         x2 = min(img_w, x2)
         y2 = min(img_h, y2)
-        new_bbox = np.array([x1, y1, x2, y2]).astype(np.int)
+        new_bbox = np.array([x1, y1, x2, y2]).astype(int)
         landmarks = landmarks - new_bbox[0:2]
         bbox[0:2] = bbox[0:2] - new_bbox[0:2]
         bbox[2:4] = bbox[2:4] - new_bbox[0:2]
