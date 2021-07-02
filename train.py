@@ -11,16 +11,19 @@ import numpy as np
 from benchmarks_nme import calculate_nme
 import argparse
 
-# TODO: that seems is no good (runs server in the train script)
-os.system("nohup python3 -m visdom.server --hostname 0.0.0.0 > visdom.log &")
-time.sleep(2)
-viz = visdom.Visdom()
-
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_size", default=160, type=int)
 parser.add_argument("--batch_size", default=256, type=int)
 parser.add_argument("--name", default="slim", type=str)
+parser.add_argument("--visdom", default=False, type=bool)
 args = parser.parse_args()
+
+if args.visdom:
+    # TODO: that seems is no good (runs server in the train script)
+    os.system("nohup python3 -m visdom.server --hostname 0.0.0.0 > visdom.log &")
+    time.sleep(2)
+
+viz = visdom.Visdom()
 
 lr_decay_every_epoch = [1, 25, 35, 75, 150]
 lr_value_every_epoch = [0.00001, 0.0001, 0.00005, 0.00001, 0.000001]
