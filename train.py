@@ -15,6 +15,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--input_size", default=160, type=int)
 parser.add_argument("--batch_size", default=256, type=int)
 parser.add_argument("--name", default="slim", type=str)
+parser.add_argument("--num_workers", default=4, type=int)
 parser.add_argument("--visdom", default=False, type=bool)
 args = parser.parse_args()
 
@@ -325,11 +326,11 @@ if __name__ == "__main__":
     train_dataset = Landmark("train.json", input_size, True)
     # num_workers=0 for CPU
     train_loader = DataLoader(
-        train_dataset, batch_size=batch_size, shuffle=True, num_workers=4
+        train_dataset, batch_size=batch_size, shuffle=True, num_workers=args.num_workers
     )
     val_dataset = Landmark("val.json", input_size, False)
     val_loader = DataLoader(
-        val_dataset, batch_size=batch_size, shuffle=False, num_workers=4
+        val_dataset, batch_size=batch_size, shuffle=False, num_workers=args.num_workers
     )
 
     model = Slim()
