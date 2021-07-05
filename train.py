@@ -10,6 +10,8 @@ import visdom
 import numpy as np
 from benchmarks_nme import calculate_nme
 import argparse
+import torch.nn as nn
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_size", default=160, type=int)
@@ -17,6 +19,8 @@ parser.add_argument("--batch_size", default=256, type=int)
 parser.add_argument("--name", default="slim", type=str)
 parser.add_argument("--num_workers", default=4, type=int)
 parser.add_argument("--visdom", default=False, type=bool)
+parser.add_argument("--device", default="cpu", help="device (cpu, cuda or cuda_ids)")
+
 args = parser.parse_args()
 
 if args.visdom:
@@ -25,11 +29,6 @@ if args.visdom:
     time.sleep(2)
 
 viz = visdom.Visdom()
-
-lr_decay_every_epoch = [1, 25, 35, 75, 150]
-lr_value_every_epoch = [0.00001, 0.0001, 0.00005, 0.00001, 0.000001]
-weight_decay_factor = 5.0e-4
-l2_regularization = weight_decay_factor
 
 input_size = (args.input_size, args.input_size)
 batch_size = args.batch_size
@@ -89,19 +88,6 @@ class Metrics:
         return total, lands, pose, leye, reye, mouth, acc
 
 
-def decay(epoch):
-    if epoch < lr_decay_every_epoch[0]:
-        return lr_value_every_epoch[0]
-    if lr_decay_every_epoch[0] <= epoch < lr_decay_every_epoch[1]:
-        return lr_value_every_epoch[1]
-    if lr_decay_every_epoch[1] <= epoch < lr_decay_every_epoch[2]:
-        return lr_value_every_epoch[2]
-    if lr_decay_every_epoch[2] <= epoch < lr_decay_every_epoch[3]:
-        return lr_value_every_epoch[3]
-    if lr_decay_every_epoch[3] <= epoch < lr_decay_every_epoch[4]:
-        return lr_value_every_epoch[4]
-
-
 def calculate_loss(predict_keypoints, label_keypoints):
     landmark_label = label_keypoints[:, 0:136]
     pose_label = label_keypoints[:, 136:139]
@@ -149,12 +135,12 @@ def train(epoch):
     print(
         "==================================Training Phase================================="
     )
-    print("Current LR:{}".format(list(optim.param_groups)[0]["lr"]))
-    viz.line([list(optim.param_groups)[0]["lr"]], [epoch], win="lr", update="append")
+    print("Current LR:{}".format(list(optimizer.param_groups)[0]["lr"]))
+    viz.line([list(optimizer.param_groups)[0]["lr"]], [epoch], win="lr", update="append")
     for i, (imgs, labels) in enumerate(train_loader):
-        imgs = imgs.cuda()  # no need for CPU
-        labels = labels.cuda()  # no need for CPU
-        optim.zero_grad()
+        imgs = imgs.to(device)
+        labels = labels.to(device)
+        optimizer.zero_grad()
         preds = model(imgs)
         (
             loss,
@@ -167,7 +153,8 @@ def train(epoch):
         acc = calculate_accuracy(preds, labels, imgs.shape[-1], normolization=False)
         metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss, acc)
         loss.backward()
-        optim.step()
+        optimizer.step()
+        lr_scheduler.step()
 
         total_samples += len(imgs)
         end = time.time()
@@ -238,8 +225,8 @@ def evaluate(epoch):
         "==================================Eval Phase================================="
     )
     for i, (imgs, labels) in enumerate(val_loader):
-        imgs = imgs.cuda()  # no need for CPU
-        labels = labels.cuda()  # no need for CPU
+        imgs = imgs.to(device)
+        labels = labels.to(device)
         with torch.no_grad():
             preds = model(imgs)
             (
@@ -324,7 +311,7 @@ if __name__ == "__main__":
     checkpoint = os.environ.get("PEPPA_START_CHECKPOINT", None)
     torch.backends.cudnn.benchmark = True
     train_dataset = Landmark("train.json", input_size, True)
-    # num_workers=0 for CPU
+
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=args.num_workers
     )
@@ -335,7 +322,18 @@ if __name__ == "__main__":
 
     model = Slim()
     model.train()
-    model.cuda()  # no need for CPU
+
+    if args.device != "cpu" and torch.cuda.is_available():
+        if len(args.device) > 1:
+            device = "cuda"
+            model = torch.nn.DataParallel(model, device_ids=[args.device])
+        else:
+            device = f"cuda:{args.device}"
+            model.to(device)
+    else:
+        device = "cpu"
+        model.to(device)
+
     if checkpoint is not None:
         model.load_state_dict(torch.load(checkpoint))
         start_epoch = int(checkpoint.split("_")[-2]) + 1
@@ -348,12 +346,12 @@ if __name__ == "__main__":
 
     init_visdom()
 
-    optim = torch.optim.Adam(
-        model.parameters(), lr=lr_value_every_epoch[0], weight_decay=5e-4
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=0.0001, weight_decay=5e-4
     )
+    criterion = nn.CrossEntropyLoss()
+    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[25, 35, 75, 150], gamma=0.1)
 
     for ep in range(start_epoch, 150):
-        for param_group in optim.param_groups:
-            param_group["lr"] = decay(ep)
         train(ep)
         evaluate(ep)
