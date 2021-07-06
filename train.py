@@ -17,8 +17,7 @@ parser.add_argument("--input_size", default=160, type=int)
 parser.add_argument("--batch_size", default=256, type=int)
 parser.add_argument("--name", default="slim", type=str)
 parser.add_argument("--num_workers", default=4, type=int)
-parser.add_argument("--visdom", default=False, type=bool)
-parser.add_argument("--device", default="cpu", help="device (cpu, cuda or cuda_ids)")
+parser.add_argument("--device", default="cuda", help="device (cpu, cuda or cuda_ids)")
 
 args = parser.parse_args()
 
