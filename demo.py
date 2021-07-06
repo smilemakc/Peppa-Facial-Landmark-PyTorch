@@ -17,7 +17,7 @@ import numpy as np
 
 face_detector = FaceDetector()
 # lmk_detector = Detector((128, 128))
-lmk_detector = Detector()
+lmk_detector = Detector(parallel=True, device='cpu')
 cap = cv2.VideoCapture(0)
 ret, frame = cap.read()
 out = cv2.VideoWriter("output.mp4", cv2.VideoWriter_fourcc(*"mp4v"), 20.0, (frame.shape[1], frame.shape[0]))

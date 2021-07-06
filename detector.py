@@ -8,11 +8,16 @@ import time
 
 
 class Detector:
-    def __init__(self, detection_size=(160, 160)):
+    def __init__(self, detection_size=(160, 160), parallel=False, device='cpu',
+                 pretrained_path="pretrained_weights/slim_160_latest.pth"):
+        self.parallel = parallel
+        self.device = device
         self.model = Slim()
-        self.model.load_state_dict(torch.load(open("pretrained_weights/slim_160_latest.pth", "rb"), map_location="cpu"))
+        if parallel:
+            self.model = torch.nn.DataParallel(self.model)
+        self.model.load_state_dict(torch.load(open(pretrained_path, "rb"), map_location="cpu"))
         self.model.eval()
-        self.model.cuda()
+        self.model.to(device)
         self.tracker = Tracker()
         self.detection_size = detection_size
 
@@ -38,7 +43,7 @@ class Detector:
         crop_image, detail = self.crop_image(img, bbox)
         crop_image = (crop_image - 127.0) / 127.0
         crop_image = np.array([np.transpose(crop_image, (2, 0, 1))])
-        crop_image = torch.tensor(crop_image).float().cuda()
+        crop_image = torch.tensor(crop_image).float().to(self.device)
         with torch.no_grad():
             start = time.time()
             raw = self.model(crop_image)[0].cpu().numpy()

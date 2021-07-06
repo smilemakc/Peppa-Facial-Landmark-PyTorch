@@ -2,7 +2,7 @@ from torch.utils.data import Dataset
 from utils.visual_augmentation import ColorDistort, pixel_jitter
 import numpy as np
 import copy
-import json
+import orjson as json
 import random
 import cv2
 from utils.augmentation import Rotate_aug, Affine_aug, Mirror, Padding_aug, Img_dropout
@@ -28,7 +28,7 @@ class data_info(object):
 
     def load_anns(self):
         with open(self.ann_json, 'r') as f:
-            train_json_list = json.load(f)
+            train_json_list = json.loads(f.read())
         self.metas = train_json_list
 
     def get_all_sample(self):
