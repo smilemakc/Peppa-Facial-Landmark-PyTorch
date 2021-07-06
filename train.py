@@ -23,8 +23,6 @@ args = parser.parse_args()
 
 # !python3 -m visdom.server at the terminal for starting Visdom server
 
-viz = visdom.Visdom()
-
 input_size = (args.input_size, args.input_size)
 batch_size = args.batch_size
 
@@ -138,8 +136,8 @@ def train(epoch):
     print(
         "==================================Training Phase================================="
     )
-    print("Current LR:{}".format(list(optimizer.param_groups)[0]["lr"]))
-    viz.line([list(optimizer.param_groups)[0]["lr"]], [epoch], win="lr", update="append")
+    print(f"Current LR:{lr_scheduler.get_last_lr()}")
+    viz.line([lr_scheduler.get_last_lr()], [epoch], win="lr", update="append")
     for i, (imgs, labels) in enumerate(train_loader):
         imgs = imgs.to(device)
         labels = labels.to(device)
@@ -349,15 +347,14 @@ if __name__ == "__main__":
     mse_loss_fn = torch.nn.MSELoss()
     bce_loss_fn = torch.nn.BCEWithLogitsLoss()
 
-    init_visdom()
-
     optimizer = torch.optim.SGD(
         model.parameters(), lr=0.0001
     )
     lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
         optimizer, base_lr=0.00001, max_lr=0.0001, step_size_up=5, mode="triangular2"
     )
-
+    viz = visdom.Visdom()
+    init_visdom()
     for ep in range(start_epoch, 150):
         train_time = train(ep) / 60
         eval_time = evaluate(ep) / 60
