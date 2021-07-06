@@ -53,9 +53,17 @@ def init_visdom():
             title="eval_loss", legend=["landmark", "pose", "leye", "reye", "mouth"]
         ),
     )
-    viz.line([0.], [0], win="train_acc", opts=dict(title="train_acc"))
-    viz.line([0.], [0], win="eval_acc", opts=dict(title="eval_acc"))
-    viz.line([0.], [0], win="lr", opts=dict(title="lr"))
+    viz.line([0.0], [0], win="train_acc", opts=dict(title="train_acc"))
+    viz.line([0.0], [0], win="eval_acc", opts=dict(title="eval_acc"))
+    viz.line([0.0], [0], win="lr", opts=dict(title="lr"))
+    viz.line(
+        [[0.0, 0.0]],
+        [0],
+        win="epoch_time",
+        opts=dict(
+            title="epoch_time, m", legend=["train_phase", "eval_phase"]
+        ),
+    )
 
 
 class Metrics:
@@ -214,6 +222,7 @@ def train(epoch):
         update="append",
     )
     viz.line([avg_ac], [epoch],  win="train_acc", update="append")
+    return time.time() - start
 
 
 def evaluate(epoch):
@@ -305,6 +314,7 @@ def evaluate(epoch):
         update="append",
     )
     viz.line([avg_ac], [epoch], win="eval_acc", update="append")
+    return time.time() - start
 
 
 if __name__ == "__main__":
@@ -353,5 +363,16 @@ if __name__ == "__main__":
     lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[25, 35, 75, 150], gamma=0.1)
 
     for ep in range(start_epoch, 150):
-        train(ep)
-        evaluate(ep)
+        train_time = train(ep) / 60
+        eval_time = evaluate(ep) / 60
+        viz.line(
+            [
+                [
+                    train_time,
+                    eval_time,
+                ]
+            ],
+            [ep],
+            win="epoch_time",
+            update="append",
+        )
