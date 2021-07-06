@@ -155,6 +155,7 @@ def train(epoch):
         acc = calculate_accuracy(preds, labels, imgs.shape[-1], normolization=False)
         metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss, acc)
         loss.backward()
+        optimizer.step()
 
         total_samples += len(imgs)
         end = time.time()
@@ -176,8 +177,6 @@ def train(epoch):
             )
         )
 
-    optimizer.step()
-    lr_scheduler.step()
     next_line()
     (
         avg_loss,
@@ -371,3 +370,4 @@ if __name__ == "__main__":
             win="epoch_time",
             update="append",
         )
+        lr_scheduler.step()
