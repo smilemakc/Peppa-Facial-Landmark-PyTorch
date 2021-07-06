@@ -10,7 +10,6 @@ import visdom
 import numpy as np
 from benchmarks_nme import calculate_nme
 import argparse
-import torch.nn as nn
 
 
 parser = argparse.ArgumentParser()
@@ -23,10 +22,7 @@ parser.add_argument("--device", default="cpu", help="device (cpu, cuda or cuda_i
 
 args = parser.parse_args()
 
-if args.visdom:
-    # TODO: that seems is no good (runs server in the train script)
-    os.system("nohup python3 -m visdom.server --hostname 0.0.0.0 > visdom.log &")
-    time.sleep(2)
+# !python3 -m visdom.server at the terminal for starting Visdom server
 
 viz = visdom.Visdom()
 
@@ -356,11 +352,12 @@ if __name__ == "__main__":
 
     init_visdom()
 
-    optimizer = torch.optim.Adam(
-        model.parameters(), lr=0.0001, weight_decay=5e-4
+    optimizer = torch.optim.SGD(
+        model.parameters(), lr=0.0001
     )
-    criterion = nn.CrossEntropyLoss()
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[25, 35, 75, 150], gamma=0.1)
+    lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
+        optimizer, base_lr=0.00001, max_lr=0.0001, step_size_up=5, mode="triangular2"
+    )
 
     for ep in range(start_epoch, 150):
         train_time = train(ep) / 60
