@@ -17,6 +17,7 @@ parser.add_argument("--input_size", default=160, type=int)
 parser.add_argument("--batch_size", default=256, type=int)
 parser.add_argument("--name", default="slim", type=str)
 parser.add_argument("--num_workers", default=4, type=int)
+parser.add_argument("--num_epochs", default=150, type=int)
 parser.add_argument("--device", default="cuda", help="device (cpu, cuda or cuda_ids)")
 
 args = parser.parse_args()
@@ -154,8 +155,6 @@ def train(epoch):
         acc = calculate_accuracy(preds, labels, imgs.shape[-1], normolization=False)
         metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss, acc)
         loss.backward()
-        optimizer.step()
-        lr_scheduler.step()
 
         total_samples += len(imgs)
         end = time.time()
@@ -176,6 +175,9 @@ def train(epoch):
                 speed,
             )
         )
+
+    optimizer.step()
+    lr_scheduler.step()
     next_line()
     (
         avg_loss,
@@ -355,7 +357,7 @@ if __name__ == "__main__":
     )
     viz = visdom.Visdom()
     init_visdom()
-    for ep in range(start_epoch, 150):
+    for ep in range(start_epoch, args.num_epochs):
         train_time = train(ep) / 60
         eval_time = evaluate(ep) / 60
         viz.line(
