@@ -18,7 +18,8 @@ parser.add_argument("--batch_size", default=256, type=int)
 parser.add_argument("--name", default="slim", type=str)
 parser.add_argument("--num_workers", default=4, type=int)
 parser.add_argument("--num_epochs", default=150, type=int)
-parser.add_argument("--scheduler", default="", type=str)
+parser.add_argument("--lr", default=0.00001, type=float, help="base learning rate")
+parser.add_argument("--scheduler", default="custom_torch", type=str, help="custom_torch || custom_tf")
 parser.add_argument("--device", default="cuda", help="device (cpu, cuda or cuda_ids)")
 
 args = parser.parse_args()
@@ -59,6 +60,21 @@ def init_visdom():
             title="epoch_time, m", legend=["train_phase", "eval_phase"]
         ),
     )
+
+
+def adjust_lr(epoch, lr, mode="custom_torch"):
+    if mode == "custom_torch":
+        lr_decay_every_epoch = [1, 25, 35, 75, 150]
+        lr_value_every_epoch = [0.00001, 0.0001, 0.00005, 0.00001, 0.000001]
+    elif mode == "custom_tf":
+        lr_decay_every_epoch = [1, 2, 100, 150, 200, 250, 300]
+        lr_value_every_epoch = [0.00001, 0.0001, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001]
+    else:
+        raise ValueError("Unsuitable mode type, change it to 'torch' or 'tf'.")
+    for decay, value in zip(lr_decay_every_epoch, lr_value_every_epoch):
+        if epoch <= decay:
+            return value
+    return lr
 
 
 class Metrics:
@@ -138,8 +154,8 @@ def train(epoch):
     print(
         "==================================Training Phase================================="
     )
-    print(f"Current LR:{lr_scheduler.get_last_lr()}")
-    viz.line([lr_scheduler.get_last_lr()], [epoch], win="lr", update="append")
+    print(f"Current LR:{list(optimizer.param_groups)[0]['lr']}")
+    viz.line([list(optimizer.param_groups)[0]['lr']], [epoch], win="lr", update="append")
     for i, (imgs, labels) in enumerate(train_loader):
         imgs = imgs.to(device)
         labels = labels.to(device)
@@ -156,10 +172,7 @@ def train(epoch):
         acc = calculate_accuracy(preds, labels, imgs.shape[-1], normolization=False)
         metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss, acc)
         loss.backward()
-        if args.scheduler not in ["onecycle", "cyclic"]:
-            optimizer.step()
-        else:
-            lr_scheduler.step()
+        optimizer.step()
 
         total_samples += len(imgs)
         end = time.time()
@@ -352,27 +365,19 @@ if __name__ == "__main__":
     mse_loss_fn = torch.nn.MSELoss()
     bce_loss_fn = torch.nn.BCEWithLogitsLoss()
 
-    optimizer = torch.optim.SGD(
-        model.parameters(), lr=0.0001
+    optimizer = torch.optim.Adam(
+        model.parameters(), lr=args.lr, weight_decay=5e-4
     )
-
-    if args.scheduler == "cyclic":
-        lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
-            optimizer, base_lr=0.00001, max_lr=0.001, step_size_up=5, mode="triangular2"
-        )
-    elif args.scheduler == "onecycle":
-        lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
-            optimizer, max_lr=0.001, steps_per_epoch=len(train_loader), epochs=args.num_epochs
-        )
-    else:
-        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
-            optimizer, milestones=[25, 35, 75], gamma=0.1
-        )
 
     viz = visdom.Visdom()
     init_visdom()
 
+    current_lr = args.lr
+
     for ep in range(start_epoch, args.num_epochs):
+        for param_group in optimizer.param_groups:
+            param_group["lr"] = adjust_lr(ep, current_lr, mode=args.scheduler)
+            current_lr = param_group["lr"]
         train_time = train(ep) / 60
         eval_time = evaluate(ep) / 60
         viz.line(
@@ -386,5 +391,3 @@ if __name__ == "__main__":
             win="epoch_time",
             update="append",
         )
-        if args.scheduler not in ["onecycle", "cyclic"]:
-            lr_scheduler.step()
