@@ -18,7 +18,7 @@ parser.add_argument("--batch_size", default=256, type=int)
 parser.add_argument("--name", default="slim", type=str)
 parser.add_argument("--num_workers", default=4, type=int)
 parser.add_argument("--num_epochs", default=150, type=int)
-parser.add_argument("--scheduler", default="onecycle", type=str)
+parser.add_argument("--scheduler", default="", type=str)
 parser.add_argument("--device", default="cuda", help="device (cpu, cuda or cuda_ids)")
 
 args = parser.parse_args()
@@ -156,7 +156,10 @@ def train(epoch):
         acc = calculate_accuracy(preds, labels, imgs.shape[-1], normolization=False)
         metrics.update(landmark_loss, loss_pose, leye_loss, reye_loss, mouth_loss, acc)
         loss.backward()
-        optimizer.step()
+        if args.scheduler not in ["onecycle", "cyclic"]:
+            optimizer.step()
+        else:
+            lr_scheduler.step()
 
         total_samples += len(imgs)
         end = time.time()
@@ -355,14 +358,14 @@ if __name__ == "__main__":
 
     if args.scheduler == "cyclic":
         lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
-            optimizer, base_lr=0.00001, max_lr=0.0001, step_size_up=5, mode="triangular2"
+            optimizer, base_lr=0.00001, max_lr=0.001, step_size_up=5, mode="triangular2"
         )
     elif args.scheduler == "onecycle":
         lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
-            optimizer, max_lr=0.001, steps_per_epoch=10, epochs=10
+            optimizer, max_lr=0.001, steps_per_epoch=len(train_loader), epochs=args.num_epochs
         )
     else:
-        scheduler = torch.optim.lr_scheduler.MultiStepLR(
+        lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer, milestones=[25, 35, 75], gamma=0.1
         )
 
@@ -383,4 +386,5 @@ if __name__ == "__main__":
             win="epoch_time",
             update="append",
         )
-        lr_scheduler.step()
+        if args.scheduler not in ["onecycle", "cyclic"]:
+            lr_scheduler.step()
