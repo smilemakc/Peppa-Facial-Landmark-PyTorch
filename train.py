@@ -18,6 +18,7 @@ parser.add_argument("--batch_size", default=256, type=int)
 parser.add_argument("--name", default="slim", type=str)
 parser.add_argument("--num_workers", default=4, type=int)
 parser.add_argument("--num_epochs", default=150, type=int)
+parser.add_argument("--scheduler", default="onecycle", type=str)
 parser.add_argument("--device", default="cuda", help="device (cpu, cuda or cuda_ids)")
 
 args = parser.parse_args()
@@ -351,11 +352,23 @@ if __name__ == "__main__":
     optimizer = torch.optim.SGD(
         model.parameters(), lr=0.0001
     )
-    lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
-        optimizer, base_lr=0.00001, max_lr=0.0001, step_size_up=5, mode="triangular2"
-    )
+
+    if args.scheduler == "cyclic":
+        lr_scheduler = torch.optim.lr_scheduler.CyclicLR(
+            optimizer, base_lr=0.00001, max_lr=0.0001, step_size_up=5, mode="triangular2"
+        )
+    elif args.scheduler == "onecycle":
+        lr_scheduler = torch.optim.lr_scheduler.OneCycleLR(
+            optimizer, max_lr=0.001, steps_per_epoch=10, epochs=10
+        )
+    else:
+        scheduler = torch.optim.lr_scheduler.MultiStepLR(
+            optimizer, milestones=[25, 35, 75], gamma=0.1
+        )
+
     viz = visdom.Visdom()
     init_visdom()
+
     for ep in range(start_epoch, args.num_epochs):
         train_time = train(ep) / 60
         eval_time = evaluate(ep) / 60
