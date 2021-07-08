@@ -21,6 +21,7 @@ parser.add_argument("--num_epochs", default=150, type=int)
 parser.add_argument("--lr", default=0.00001, type=float, help="base learning rate")
 parser.add_argument("--scheduler", default="custom_torch", type=str, help="custom_torch || custom_tf")
 parser.add_argument("--device", default="cuda", help="device (cpu, cuda or cuda_ids)")
+parser.add_argument("--checkpoint", default="", type=str, help="pretrained checkpoint weights path")
 
 args = parser.parse_args()
 
@@ -332,7 +333,6 @@ def evaluate(epoch):
 
 
 if __name__ == "__main__":
-    checkpoint = os.environ.get("PEPPA_START_CHECKPOINT", None)
     torch.backends.cudnn.benchmark = True
     train_dataset = Landmark("train.json", input_size, True)
 
@@ -358,9 +358,9 @@ if __name__ == "__main__":
         device = "cpu"
         model.to(device)
 
-    if checkpoint is not None:
-        model.load_state_dict(torch.load(checkpoint))
-        start_epoch = int(checkpoint.split("_")[-2]) + 1
+    if args.checkpoint is not None:
+        model.load_state_dict(torch.load(args.checkpoint))
+        start_epoch = int(args.checkpoint.split("_")[-2]) + 1
     else:
         start_epoch = 0
 
