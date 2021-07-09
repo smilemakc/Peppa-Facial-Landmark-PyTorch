@@ -17,7 +17,7 @@ parser.add_argument("--input_size", default=160, type=int)
 parser.add_argument("--batch_size", default=256, type=int)
 parser.add_argument("--name", default="slim", type=str)
 parser.add_argument("--num_workers", default=4, type=int)
-parser.add_argument("--num_epochs", default=150, type=int)
+parser.add_argument("--num_epochs", default=300, type=int)
 parser.add_argument("--lr", default=0.00001, type=float, help="base learning rate")
 parser.add_argument("--scheduler", default="custom_torch", type=str, help="custom_torch || custom_tf")
 parser.add_argument("--device", default="cuda", help="device (cpu, cuda or cuda_ids)")
@@ -68,8 +68,8 @@ def adjust_lr(epoch, lr, mode="custom_torch"):
         lr_decay_every_epoch = [1, 25, 35, 75, 150]
         lr_value_every_epoch = [0.00001, 0.0001, 0.00005, 0.00001, 0.000001]
     elif mode == "custom_own":
-        lr_decay_every_epoch = [1, 25, 35, 55, 75, 150]
-        lr_value_every_epoch = [0.00001, 0.0001, 0.00005, 0.00001, 0.000001, 0.000005]
+        lr_decay_every_epoch = [1, 5, 100, 150, 200, 250, 300]
+        lr_value_every_epoch = [0.00001, 0.0001, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001]
     elif mode == "custom_tf":
         lr_decay_every_epoch = [1, 2, 100, 150, 200, 250, 300]
         lr_value_every_epoch = [0.00001, 0.0001, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001]
