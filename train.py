@@ -21,7 +21,7 @@ parser.add_argument("--num_epochs", default=300, type=int)
 parser.add_argument("--lr", default=0.00001, type=float, help="base learning rate")
 parser.add_argument("--scheduler", default="custom_torch", type=str, help="custom_torch || custom_tf")
 parser.add_argument("--device", default="cuda", help="device (cpu, cuda or cuda_ids)")
-parser.add_argument("--checkpoint", default="", type=str, help="pretrained checkpoint weights path")
+parser.add_argument("--checkpoint", default=None, type=str, help="pretrained checkpoint weights path")
 
 args = parser.parse_args()
 
