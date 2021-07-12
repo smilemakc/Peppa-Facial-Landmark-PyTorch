@@ -68,8 +68,8 @@ def adjust_lr(epoch, lr, mode="custom_torch"):
         lr_decay_every_epoch = [1, 25, 35, 75, 150]
         lr_value_every_epoch = [0.00001, 0.0001, 0.00005, 0.00001, 0.000001]
     elif mode == "custom_own":
-        lr_decay_every_epoch = [1, 5, 100, 150, 200, 250, 300]
-        lr_value_every_epoch = [0.00001, 0.0001, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001]
+        lr_decay_every_epoch = [1, 5, 30, 50, 75, 100, 150]
+        lr_value_every_epoch = [0.00001, 0.0001, 0.001, 0.0003, 0.0001, 0.00001, 0.0000001]
     elif mode == "custom_tf":
         lr_decay_every_epoch = [1, 2, 100, 150, 200, 250, 300]
         lr_value_every_epoch = [0.00001, 0.0001, 0.001, 0.0001, 0.00001, 0.000001, 0.0000001]
