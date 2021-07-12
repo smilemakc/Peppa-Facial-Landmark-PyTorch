@@ -152,7 +152,7 @@ def calculate_loss(predict_keypoints, label_keypoints, accuracy):
     reye_cls_label = label_keypoints[:, 140]
     mouth_cls_label = label_keypoints[:, 141]
     big_mouth_cls_label = label_keypoints[:, 142]
-    score_label = torch.FloatTensor(accuracy)
+    score_label = torch.FloatTensor(accuracy).to(device)
     landmark_predict = predict_keypoints[:, 0:136]
     pose_predict = predict_keypoints[:, 136:139]
     leye_cls_predict = predict_keypoints[:, 139]
