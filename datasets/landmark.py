@@ -119,14 +119,10 @@ class Landmark(Dataset):
         all_samples = ann_info.get_all_sample()
         self.raw_data_set_size = len(all_samples)
         print("Raw Samples: " + str(self.raw_data_set_size))
-        # balanced_samples = all_samples
+        balanced_samples = all_samples
         if self.training_flag:
             balanced_samples = self.balance(all_samples)
             print("Balanced Samples: " + str(len(balanced_samples)))
-            balanced_samples = all_samples
-            pass
-        else:
-            balanced_samples = all_samples
         return balanced_samples
 
     def balance(self, anns):
