@@ -242,7 +242,7 @@ def train(epoch):
                 score_loss.item(),
                 progress,
                 speed,
-                len(train_loader)
+                len(train_dataset)
             )
         )
 
