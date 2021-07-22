@@ -11,14 +11,6 @@ def conv_bn(inp, oup, stride=1):
     )
 
 
-def depth_conv2d(inp, oup, kernel=1, stride=1, pad=0):
-    return nn.Sequential(
-        nn.Conv2d(inp, inp, kernel_size=kernel, stride=stride, padding=pad, groups=inp),
-        nn.ReLU(inplace=True),
-        nn.Conv2d(inp, oup, kernel_size=1)
-    )
-
-
 def conv_dw(inp, oup, stride, padding=1):
     return nn.Sequential(
         nn.Conv2d(inp, inp, 3, stride, padding, groups=inp, bias=False),

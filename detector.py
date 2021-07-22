@@ -1,6 +1,6 @@
 import torch
 import cv2
-from models.slim import Slim
+from models.slim import Slim, SlimScore
 import numpy as np
 from tracker import Tracker
 from utils.headpose import get_head_pose
@@ -12,7 +12,7 @@ class Detector:
                  pretrained_path="pretrained_weights/slim_160_latest.pth"):
         self.parallel = parallel
         self.device = device
-        self.model = Slim()
+        self.model = SlimScore()
         if parallel:
             self.model = torch.nn.DataParallel(self.model)
         self.model.load_state_dict(torch.load(open(pretrained_path, "rb"), map_location="cpu"))
@@ -54,4 +54,4 @@ class Detector:
         landmark[:, 1] = landmark[:, 1] * detail[0] + detail[2]
         landmark = self.tracker.track(img, landmark)
         _, PRY_3d = get_head_pose(landmark, img)
-        return landmark, PRY_3d[:, 0]
+        return landmark, PRY_3d[:, 0], raw[143]

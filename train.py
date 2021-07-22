@@ -26,7 +26,7 @@ parser.add_argument("--device", default="cuda",
 parser.add_argument("--checkpoint", default=None, type=str,
                     help="pretrained checkpoint weights path")
 
-args = parser.parse_args()
+args, unknown = parser.parse_known_args()
 
 # !python3 -m visdom.server at the terminal for starting Visdom server
 
@@ -94,6 +94,7 @@ def adjust_lr(epoch, lr, mode="custom_torch"):
         lr_value_every_epoch = [0.00001, 0.0001, 0.00005, 0.00001, 0.000001]
     elif mode == "custom_own":
         lr_decay_every_epoch = [1, 5, 30, 50, 75, 100, 150]
+        # lr_decay_every_epoch = [1, 5, 15, 25, 40, 55, 60]
         lr_value_every_epoch = [0.00001, 0.0001, 0.001, 0.0003, 0.0001, 0.00001,
                                 0.0000001]
     elif mode == "custom_tf":
@@ -229,7 +230,7 @@ def train(epoch):
         rewrite(
             "Epoch: {} Acc -- {:.4f}; Loss -- Total: {:.4f} Landmark: {:.4f} "
             "Pose: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f} "
-            "Score: {:.4f} Progress: {:.4f} Speed: {:.4f}it/s".format(
+            "Score: {:.4f} Progress: {:.4f} Speed: {:.4f}it/s {:.4f}".format(
                 epoch,
                 total_acc.item(),
                 loss.item(),
@@ -241,6 +242,7 @@ def train(epoch):
                 score_loss.item(),
                 progress,
                 speed,
+                len(train_loader)
             )
         )
 
