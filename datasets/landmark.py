@@ -1,5 +1,5 @@
 from torch.utils.data import Dataset
-from utils.visual_augmentation import ColorDistort, pixel_jitter
+from utils.visual_augmentation import ColorDistort, pixel_jitter, append_hand, append_noise
 import numpy as np
 import copy
 import orjson as json
@@ -81,6 +81,10 @@ class Landmark(Dataset):
                     crop_image = Img_dropout(crop_image, 0.2)
                 if random.uniform(0, 1) > 0.5:
                     crop_image = Padding_aug(crop_image, 0.3)
+                if random.uniform(0, 1) > 0.5:
+                    crop_image = append_hand(crop_image)
+                if random.uniform(0, 1) > 0.5:
+                    crop_image = append_noise(crop_image)
             reprojectdst, euler_angle = get_head_pose(label, crop_image)
             PRY = euler_angle.reshape([-1]).astype(np.float32) / 90.
             cla_label = np.zeros([4])
