@@ -115,10 +115,10 @@ class SlimScore(nn.Module):
         cat = torch.cat((output1, output2, output3), 1)
         out = self.fc(cat)
         return {
-            "landmarks": out[0:136],
-            "pose": out[136:139],
-            "expressions": out[139, 143],
-            "score": out[143],
+            "landmarks": out[:, 0:136],
+            "pose": out[:, 136:139],
+            "expressions": out[:, 139:143],
+            "score": out[:, 143],
         }
 
 
