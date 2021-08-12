@@ -63,23 +63,23 @@ class Landmark(Dataset):
             bbox = np.array(bbox)
             # print("image", type(image), fname)
             crop_image, label = self.augmentationCropImage(image, bbox, label, self.training_flag)
-
+            rng = np.random.default_rng(seed=42)
             if self.training_flag:
-                if random.uniform(0, 1) > 0.5:
+                if rng.random() > 0.5:
                     crop_image, label = Mirror(crop_image, label=label, symmetry=symmetry)
-                if random.uniform(0, 1) > 0.0:
-                    angle = random.uniform(-45, 45)
+                if rng.random() > 0.0:
+                    angle = rng.uniform(-45, 45)
                     crop_image, label = Rotate_aug(crop_image, label=label, angle=angle)
-                if random.uniform(0, 1) > 0.5:
-                    strength = random.uniform(0, 50)
+                if rng.random() > 0.5:
+                    strength = rng.uniform(0, 50)
                     crop_image, label = Affine_aug(crop_image, strength=strength, label=label)
-                if random.uniform(0, 1) > 0.5:
+                if rng.random() > 0.5:
                     crop_image = self.color_augmentor(crop_image)
-                if random.uniform(0, 1) > 0.5:
+                if rng.random() > 0.5:
                     crop_image = pixel_jitter(crop_image, 15)
-                if random.uniform(0, 1) > 0.5:
+                if rng.random() > 0.5:
                     crop_image = Img_dropout(crop_image, 0.2)
-                if random.uniform(0, 1) > 0.5:
+                if rng.random() > 0.5:
                     crop_image = Padding_aug(crop_image, 0.3)
             reprojectdst, euler_angle = get_head_pose(label, crop_image)
             PRY = euler_angle.reshape([-1]).astype(np.float32) / 90.
@@ -97,7 +97,6 @@ class Landmark(Dataset):
             #     crop_image = cv2.circle(crop_image, tuple(point.astype(np.int)), 3, (255, 0, 0), -1, 1)
             # cv2.imshow("", crop_image)
             # cv2.waitKey()
-
             label = label.astype(np.float32)
             label[:, 0] = label[:, 0] / crop_image_width
             label[:, 1] = label[:, 1] / crop_image_height
