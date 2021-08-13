@@ -17,8 +17,11 @@ import numpy as np
 
 face_detector = FaceDetector()
 # lmk_detector = Detector((128, 128))
-lmk_detector = Detector(parallel=True, device='cpu')
-cap = cv2.VideoCapture(0)
+lmk_detector = Detector(
+    parallel=True, device='cpu',
+    # pretrained_path="/Users/balashov/Documents/landmarks/simpleface/slim_score_1207_batch64_160x160_epoch_99_0.0992.pth"
+)
+cap = cv2.VideoCapture(1)
 ret, frame = cap.read()
 out = cv2.VideoWriter("output.mp4", cv2.VideoWriter_fourcc(*"mp4v"), 30.0, (frame.shape[1], frame.shape[0]))
 while True:

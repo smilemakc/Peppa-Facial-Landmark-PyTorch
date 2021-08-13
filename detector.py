@@ -46,12 +46,12 @@ class Detector:
         crop_image = torch.tensor(crop_image).float().to(self.device)
         with torch.no_grad():
             start = time.time()
-            raw = self.model(crop_image)[0].cpu().numpy()
+            raw = self.model(crop_image)
             end = time.time()
             print("PyTorch Inference Time: {:.6f}".format(end - start))
-            landmark = raw[0:136].reshape((-1, 2))
+            landmark = raw["landmarks"].cpu().numpy().reshape((-1, 2))
         landmark[:, 0] = landmark[:, 0] * detail[1] + detail[3]
         landmark[:, 1] = landmark[:, 1] * detail[0] + detail[2]
         landmark = self.tracker.track(img, landmark)
         _, PRY_3d = get_head_pose(landmark, img)
-        return landmark, PRY_3d[:, 0], raw[143]
+        return landmark, PRY_3d[:, 0], raw["score"][0]

@@ -114,12 +114,13 @@ class SlimScore(nn.Module):
         output3 = output3.mean(3).mean(2)
         cat = torch.cat((output1, output2, output3), 1)
         out = self.fc(cat)
-        return {
-            "landmarks": out[0:136],
-            "pose": out[136:139],
-            "expressions": out[139, 143],
-            "score": out[143],
+        out_dict = {
+            "landmarks": out[:, 0:136],
+            "pose": out[:, 136:139],
+            "expressions": out[:, 139:143],
+            "score": out[:, 143],
         }
+        return out_dict
 
 
 if __name__ == '__main__':
