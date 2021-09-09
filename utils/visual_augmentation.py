@@ -1,6 +1,61 @@
 import cv2
 import numpy as np
 import random
+import os
+from PIL import Image
+
+
+def append_hand(src, place_factor=0.7, rotate_factor=45, seed=23):
+    src = Image.fromarray(src)
+    if seed:
+        np.random.seed(seed)
+
+    aug_path = "aug_images/hands"
+    aug_list = os.listdir(aug_path)
+    i = np.random.randint(1, len(aug_list))
+    aug = Image.open(os.path.join(aug_path, aug_list[i]))
+    flip_factor = np.random.randint(0, 2)
+    if flip_factor == 1:
+        aug = aug.transpose(Image.FLIP_LEFT_RIGHT)
+    scale_factor = src.width / aug.width * 0.7
+    aug_h = int(aug.height * scale_factor)
+    aug_w = int(aug.width * scale_factor)
+    aug = aug.resize((aug_w, aug_h))
+
+    x_min = src.width * (1 - place_factor) / 2 - aug_w / 2
+    x_max = src.width * (1 + place_factor) / 2 - aug_w / 2
+    x_base = np.random.randint(x_min, x_max)
+    y_min = src.height * (1 - place_factor) / 2
+    y_max = src.height * (1 + place_factor) / 2
+    y_base = np.random.randint(y_min, y_max)
+    angle = np.random.randint(-rotate_factor, rotate_factor)
+
+    aug = aug.rotate(angle, expand=True)
+    src.paste(aug, (x_base, y_base), aug)
+
+    return np.asarray(src)
+
+
+def append_noise(src, rotate_factor=90, seed=23):
+    src = Image.fromarray(src)
+    if seed:
+        np.random.seed(seed)
+
+    aug_path = "aug_images/noise"
+    aug_list = os.listdir(aug_path)
+    i = np.random.randint(1, len(aug_list))
+    aug = Image.open(os.path.join(aug_path, aug_list[i]))
+    flip_factor = np.random.randint(0, 2)
+    if flip_factor == 1:
+        aug = aug.transpose(Image.FLIP_LEFT_RIGHT)
+    aug = aug.resize((src.width, src.height))
+
+    angle = np.random.randint(-rotate_factor, rotate_factor)
+    aug = aug.rotate(angle, expand=True)
+
+    src.paste(aug, (0, 0), aug)
+
+    return np.asarray(src)
 
 
 def pixel_jitter(src, p=0.5, max_=5.):
