@@ -15,7 +15,7 @@ from utils.headpose import get_head_pose
 from utils.turbo.TurboJPEG import TurboJPEG
 from utils.visual_augmentation import ColorDistort, pixel_jitter
 
-logger = logging.getLogger("train")
+logger = logging.getLogger(__name__)
 jpeg = TurboJPEG()
 
 symmetry = [
