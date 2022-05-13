@@ -7,9 +7,7 @@ import numpy as np
 
 
 def read_pts(filename: Union[Path, PosixPath, str]) -> np.ndarray:
-    return np.loadtxt(
-        str(filename), comments=("version:", "n_points:", "{", "}")
-    )
+    return np.loadtxt(str(filename), comments=("version:", "n_points:", "{", "}"))
 
 
 def draw_pts(pts: np.array, frame: np.array) -> None:
@@ -40,13 +38,17 @@ def process_video(path: Union[Path, PosixPath, str]) -> int:
     return frame_number
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("run script with path to the parent folder of the 300VW_Dataset_2015_12_14")
+        print(
+            "run script with path to the parent folder of the 300VW_Dataset_2015_12_14"
+        )
         sys.exit(1)
     base_path = Path(sys.argv[1])
     total_frames = 0
     for path in base_path.iterdir():
         print(f"starts process path {path}")
         total_frames += process_video(path)
-    print(f"splitting videos on the frames was complete with total frames {total_frames}")
+    print(
+        f"splitting videos on the frames was complete with total frames {total_frames}"
+    )

@@ -24,9 +24,9 @@ def do(filename):
     gogo = json.load(open(filename))
     result = []
     for data in tqdm(gogo):
-        image_path = Path(data['image_path'])
-        landmarks = np.array(data['keypoints'])
-        bbox = np.array(data['bbox'])
+        image_path = Path(data["image_path"])
+        landmarks = np.array(data["keypoints"])
+        bbox = np.array(data["bbox"])
         img = cv2.imread(image_path.as_posix())
         img_h, img_w = img.shape[0], img.shape[1]
         center = np.array([bbox[2] + bbox[0], bbox[1] + bbox[3]]) / 2
@@ -44,17 +44,17 @@ def do(filename):
         landmarks = landmarks - new_bbox[0:2]
         bbox[0:2] = bbox[0:2] - new_bbox[0:2]
         bbox[2:4] = bbox[2:4] - new_bbox[0:2]
-        data['bbox'] = bbox.tolist()
-        data['keypoints'] = landmarks.tolist()
-        img = img[new_bbox[1]:new_bbox[3], new_bbox[0]:new_bbox[2]]
+        data["bbox"] = bbox.tolist()
+        data["keypoints"] = landmarks.tolist()
+        img = img[new_bbox[1] : new_bbox[3], new_bbox[0] : new_bbox[2]]
         output_path = rewrite_path(image_path)
-        data['image_path'] = output_path.as_posix()
+        data["image_path"] = output_path.as_posix()
         cv2.imwrite(output_path.as_posix(), img)
         result.append(data)
     json.dump(result, open(filename, "w"))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     if len(sys.argv) > 1:
         new_ds_path = Path(sys.argv[1])
     if not new_ds_path.exists():

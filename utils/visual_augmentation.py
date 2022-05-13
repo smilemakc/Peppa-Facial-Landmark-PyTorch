@@ -3,9 +3,11 @@ import numpy as np
 import random
 
 
-def pixel_jitter(src, p=0.5, max_=5.):
+def pixel_jitter(src, p=0.5, max_=5.0):
     src = src.astype(np.float32)
-    pattern = (np.random.rand(src.shape[0], src.shape[1], src.shape[2]) - 0.5) * 2 * max_
+    pattern = (
+        (np.random.rand(src.shape[0], src.shape[1], src.shape[2]) - 0.5) * 2 * max_
+    )
     img = src + pattern
     img[img < 0] = 0
     img[img > 255] = 255
@@ -90,10 +92,14 @@ def _uniform(val_range):
     return np.random.uniform(val_range[0], val_range[1])
 
 
-class ColorDistort():
-
-    def __init__(self, contrast_range=(0.8, 1.2), brightness_range=(-.2, .2), hue_range=(-0.1, 0.1),
-                 saturation_range=(0.8, 1.2)):
+class ColorDistort:
+    def __init__(
+        self,
+        contrast_range=(0.8, 1.2),
+        brightness_range=(-0.2, 0.2),
+        hue_range=(-0.1, 0.1),
+        saturation_range=(0.8, 1.2),
+    ):
         self.contrast_range = contrast_range
         self.brightness_range = brightness_range
         self.hue_range = hue_range
@@ -118,5 +124,5 @@ class ColorDistort():
         return image
 
 
-class DsfdVisualAug():
+class DsfdVisualAug:
     pass

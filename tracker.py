@@ -2,7 +2,11 @@ import cv2
 import numpy as np
 import math
 
-lk_params = dict(winSize=(40, 40), maxLevel=8, criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 5, 0.1))
+lk_params = dict(
+    winSize=(40, 40),
+    maxLevel=8,
+    criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 5, 0.1),
+)
 
 
 def dist(a, b):
@@ -17,7 +21,7 @@ class LKTracker:
     def delta_fn(self, prev_points, new_detected, lk_tracked):
         result = np.zeros(new_detected.shape)
         dist_detect = dist(new_detected, prev_points)
-        dist_lk =  dist(new_detected,lk_tracked)
+        dist_lk = dist(new_detected, lk_tracked)
         eye_indices = list(set(range(36, 48)))
         rest_indices = np.array(list(set(range(68)) - set(range(36, 48))))
         eye_indices = np.array(eye_indices)
@@ -34,18 +38,22 @@ class LKTracker:
         thres = 1
         weight1 = 0.80  # Trust lk when less than thres
         weight2 = 0.85  # Trust Detector when more than thres
-        temp[dist_detect_eyes >= thres] = detect_eyes[dist_detect_eyes >= thres] * weight2 + lk_eyes[
-            dist_detect_eyes >= thres] * (1 - weight2)
-        temp[dist_detect_eyes < thres] = lk_eyes[dist_detect_eyes < thres] * weight1 + detect_eyes[
-            dist_detect_eyes <= thres] * (1 - weight1)
+        temp[dist_detect_eyes >= thres] = detect_eyes[
+            dist_detect_eyes >= thres
+        ] * weight2 + lk_eyes[dist_detect_eyes >= thres] * (1 - weight2)
+        temp[dist_detect_eyes < thres] = lk_eyes[
+            dist_detect_eyes < thres
+        ] * weight1 + detect_eyes[dist_detect_eyes <= thres] * (1 - weight1)
         result[eye_indices] = temp
 
         thres = 10
         temp = result[rest_indices]
-        temp[dist_detect_rest < thres] = lk_rest[dist_detect_rest < thres] * weight1 + detect_rest[
-            dist_detect_rest < thres] * (1 - weight1)
-        temp[dist_detect_rest >= thres] = detect_rest[dist_detect_rest >= thres] * weight2 + lk_rest[
-            dist_detect_rest >= thres] * (1 - weight2)
+        temp[dist_detect_rest < thres] = lk_rest[
+            dist_detect_rest < thres
+        ] * weight1 + detect_rest[dist_detect_rest < thres] * (1 - weight1)
+        temp[dist_detect_rest >= thres] = detect_rest[
+            dist_detect_rest >= thres
+        ] * weight2 + lk_rest[dist_detect_rest >= thres] * (1 - weight2)
         result[rest_indices] = temp
         return np.array(result)
 
@@ -54,9 +62,13 @@ class LKTracker:
             self.prev_frame = next_frame
             self.prev_points = new_detected_points
             return new_detected_points
-        new_points, status, error = cv2.calcOpticalFlowPyrLK(self.prev_frame, next_frame,
-                                                             self.prev_points.astype(np.float32),
-                                                             None, **lk_params)
+        new_points, status, error = cv2.calcOpticalFlowPyrLK(
+            self.prev_frame,
+            next_frame,
+            self.prev_points.astype(np.float32),
+            None,
+            **lk_params
+        )
         result = self.delta_fn(self.prev_points, new_detected_points, new_points)
 
         self.prev_points = result
@@ -64,7 +76,7 @@ class LKTracker:
         return result
 
 
-class FilterTracker():
+class FilterTracker:
     def __init__(self):
         self.old_frame = None
         self.previous_landmarks_set = None
@@ -75,7 +87,10 @@ class FilterTracker():
         self.filter = OneEuroFilter()
 
     def calculate(self, now_landmarks_set):
-        if self.previous_landmarks_set is None or self.previous_landmarks_set.shape[0] == 0:
+        if (
+            self.previous_landmarks_set is None
+            or self.previous_landmarks_set.shape[0] == 0
+        ):
             self.previous_landmarks_set = now_landmarks_set
             result = now_landmarks_set
         else:
@@ -86,8 +101,17 @@ class FilterTracker():
                 for i in range(now_landmarks_set.shape[0]):
                     not_in_flag = True
                     for j in range(self.previous_landmarks_set.shape[0]):
-                        if self.iou(now_landmarks_set[i], self.previous_landmarks_set[j]) > self.iou_thres:
-                            result.append(self.smooth(now_landmarks_set[i], self.previous_landmarks_set[j]))
+                        if (
+                            self.iou(
+                                now_landmarks_set[i], self.previous_landmarks_set[j]
+                            )
+                            > self.iou_thres
+                        ):
+                            result.append(
+                                self.smooth(
+                                    now_landmarks_set[i], self.previous_landmarks_set[j]
+                                )
+                            )
                             not_in_flag = False
                             break
                     if not_in_flag:
@@ -97,8 +121,18 @@ class FilterTracker():
         return result
 
     def iou(self, p_set0, p_set1):
-        rec1 = [np.min(p_set0[:, 0]), np.min(p_set0[:, 1]), np.max(p_set0[:, 0]), np.max(p_set0[:, 1])]
-        rec2 = [np.min(p_set1[:, 0]), np.min(p_set1[:, 1]), np.max(p_set1[:, 0]), np.max(p_set1[:, 1])]
+        rec1 = [
+            np.min(p_set0[:, 0]),
+            np.min(p_set0[:, 1]),
+            np.max(p_set0[:, 0]),
+            np.max(p_set0[:, 1]),
+        ]
+        rec2 = [
+            np.min(p_set1[:, 0]),
+            np.min(p_set1[:, 1]),
+            np.max(p_set1[:, 0]),
+            np.max(p_set1[:, 1]),
+        ]
         # computing area of each rectangles
         S_rec1 = (rec1[2] - rec1[0]) * (rec1[3] - rec1[1])
         S_rec2 = (rec2[2] - rec2[0]) * (rec2[3] - rec2[1])
@@ -116,8 +150,10 @@ class FilterTracker():
     def smooth(self, now_landmarks, previous_landmarks):
         result = []
         for i in range(now_landmarks.shape[0]):
-            dis = np.sqrt(np.square(now_landmarks[i][0] - previous_landmarks[i][0]) + np.square(
-                now_landmarks[i][1] - previous_landmarks[i][1]))
+            dis = np.sqrt(
+                np.square(now_landmarks[i][0] - previous_landmarks[i][0])
+                + np.square(now_landmarks[i][1] - previous_landmarks[i][1])
+            )
             if dis < self.thres:
                 result.append(previous_landmarks[i])
             else:
@@ -139,8 +175,7 @@ def exponential_smoothing(a, x, x_prev):
 
 
 class OneEuroFilter:
-    def __init__(self, dx0=0.0, min_cutoff=1.0, beta=0.0,
-                 d_cutoff=1.0):
+    def __init__(self, dx0=0.0, min_cutoff=1.0, beta=0.0, d_cutoff=1.0):
         """Initialize the one euro filter."""
         self.min_cutoff = float(min_cutoff)
         self.beta = float(beta)

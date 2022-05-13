@@ -7,7 +7,7 @@ def conv_bn(inp, oup, stride=1):
     return nn.Sequential(
         nn.Conv2d(inp, oup, 3, stride, 1, bias=False),
         nn.BatchNorm2d(oup),
-        nn.ReLU(inplace=True)
+        nn.ReLU(inplace=True),
     )
 
 
@@ -16,10 +16,9 @@ def conv_dw(inp, oup, stride, padding=1):
         nn.Conv2d(inp, inp, 3, stride, padding, groups=inp, bias=False),
         nn.BatchNorm2d(inp),
         nn.ReLU(inplace=True),
-
         nn.Conv2d(inp, oup, 1, 1, 0, bias=False),
         nn.BatchNorm2d(oup),
-        nn.ReLU(inplace=True)
+        nn.ReLU(inplace=True),
     )
 
 
@@ -123,7 +122,7 @@ class SlimScore(nn.Module):
         return out_dict
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     model = Slim()
     model.eval()
     x = torch.randn(1, 3, 160, 160)

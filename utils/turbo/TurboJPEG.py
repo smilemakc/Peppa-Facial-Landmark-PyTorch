@@ -22,8 +22,8 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-__author__ = 'Lilo Huang <kuso.cc@gmail.com>'
-__version__ = '1.3.2'
+__author__ = "Lilo Huang <kuso.cc@gmail.com>"
+__version__ = "1.3.2"
 
 from ctypes import *
 from ctypes.util import find_library
@@ -36,11 +36,9 @@ import os
 # default libTurboJPEG library path
 base_dir = os.path.dirname(__file__)
 DEFAULT_LIB_PATHS = {
-    'Darwin': [os.path.join(base_dir,'libturbojpeg.dylib')],
-    'Linux': [
-        os.path.join(base_dir,'libturbojpeg.so')
-    ],
-    'Windows': os.path.join(base_dir,'turbojpeg.dll')
+    "Darwin": [os.path.join(base_dir, "libturbojpeg.dylib")],
+    "Linux": [os.path.join(base_dir, "libturbojpeg.so")],
+    "Windows": os.path.join(base_dir, "turbojpeg.dll"),
 }
 
 # error codes
@@ -96,7 +94,8 @@ class TurboJPEG(object):
 
     def __init__(self, lib_path=None):
         turbo_jpeg = cdll.LoadLibrary(
-            self.__find_turbojpeg() if lib_path is None else lib_path)
+            self.__find_turbojpeg() if lib_path is None else lib_path
+        )
         self.__init_decompress = turbo_jpeg.tjInitDecompress
         self.__init_decompress.restype = c_void_p
         self.__init_compress = turbo_jpeg.tjInitCompress
@@ -106,18 +105,42 @@ class TurboJPEG(object):
         self.__destroy.restype = c_int
         self.__decompress_header = turbo_jpeg.tjDecompressHeader3
         self.__decompress_header.argtypes = [
-            c_void_p, POINTER(c_ubyte), c_ulong, POINTER(c_int),
-            POINTER(c_int), POINTER(c_int), POINTER(c_int)]
+            c_void_p,
+            POINTER(c_ubyte),
+            c_ulong,
+            POINTER(c_int),
+            POINTER(c_int),
+            POINTER(c_int),
+            POINTER(c_int),
+        ]
         self.__decompress_header.restype = c_int
         self.__decompress = turbo_jpeg.tjDecompress2
         self.__decompress.argtypes = [
-            c_void_p, POINTER(c_ubyte), c_ulong, POINTER(c_ubyte),
-            c_int, c_int, c_int, c_int, c_int]
+            c_void_p,
+            POINTER(c_ubyte),
+            c_ulong,
+            POINTER(c_ubyte),
+            c_int,
+            c_int,
+            c_int,
+            c_int,
+            c_int,
+        ]
         self.__decompress.restype = c_int
         self.__compress = turbo_jpeg.tjCompress2
         self.__compress.argtypes = [
-            c_void_p, POINTER(c_ubyte), c_int, c_int, c_int, c_int,
-            POINTER(c_void_p), POINTER(c_ulong), c_int, c_int, c_int]
+            c_void_p,
+            POINTER(c_ubyte),
+            c_int,
+            c_int,
+            c_int,
+            c_int,
+            POINTER(c_void_p),
+            POINTER(c_ulong),
+            c_int,
+            c_int,
+            c_int,
+        ]
         self.__compress.restype = c_int
         self.__free = turbo_jpeg.tjFree
         self.__free.argtypes = [c_void_p]
@@ -125,19 +148,19 @@ class TurboJPEG(object):
         self.__get_error_str = turbo_jpeg.tjGetErrorStr
         self.__get_error_str.restype = c_char_p
         # tjGetErrorStr2 is only available in newer libjpeg-turbo
-        self.__get_error_str2 = getattr(turbo_jpeg, 'tjGetErrorStr2', None)
+        self.__get_error_str2 = getattr(turbo_jpeg, "tjGetErrorStr2", None)
         if self.__get_error_str2 is not None:
             self.__get_error_str2.argtypes = [c_void_p]
             self.__get_error_str2.restype = c_char_p
         # tjGetErrorCode is only available in newer libjpeg-turbo
-        self.__get_error_code = getattr(turbo_jpeg, 'tjGetErrorCode', None)
+        self.__get_error_code = getattr(turbo_jpeg, "tjGetErrorCode", None)
         if self.__get_error_code is not None:
             self.__get_error_code.argtypes = [c_void_p]
             self.__get_error_code.restype = c_int
         self.__scaling_factors = []
 
         class ScalingFactor(Structure):
-            _fields_ = ('num', c_int), ('denom', c_int)
+            _fields_ = ("num", c_int), ("denom", c_int)
 
         get_scaling_factors = turbo_jpeg.tjGetScalingFactors
         get_scaling_factors.argtypes = [POINTER(c_int)]
@@ -146,11 +169,12 @@ class TurboJPEG(object):
         scaling_factors = get_scaling_factors(byref(num_scaling_factors))
         for i in range(num_scaling_factors.value):
             self.__scaling_factors.append(
-                (scaling_factors[i].num, scaling_factors[i].denom))
+                (scaling_factors[i].num, scaling_factors[i].denom)
+            )
 
     def decode_header(self, jpeg_buf):
         """decodes JPEG header and returns image properties as a tuple.
-           e.g. (width, height, jpeg_subsample, jpeg_colorspace)
+        e.g. (width, height, jpeg_subsample, jpeg_colorspace)
         """
         handle = self.__init_decompress()
         try:
@@ -161,25 +185,39 @@ class TurboJPEG(object):
             jpeg_array = np.frombuffer(jpeg_buf, dtype=np.uint8)
             src_addr = self.__getaddr(jpeg_array)
             status = self.__decompress_header(
-                handle, src_addr, jpeg_array.size, byref(width), byref(height),
-                byref(jpeg_subsample), byref(jpeg_colorspace))
+                handle,
+                src_addr,
+                jpeg_array.size,
+                byref(width),
+                byref(height),
+                byref(jpeg_subsample),
+                byref(jpeg_colorspace),
+            )
             if status != 0:
                 self.__report_error(handle)
-            return (width.value, height.value, jpeg_subsample.value, jpeg_colorspace.value)
+            return (
+                width.value,
+                height.value,
+                jpeg_subsample.value,
+                jpeg_colorspace.value,
+            )
         finally:
             self.__destroy(handle)
 
     def imread(self, filename):
-        return self.decode(open(filename, 'rb').read())
+        return self.decode(open(filename, "rb").read())
 
     def decode(self, jpeg_buf, pixel_format=TJPF_BGR, scaling_factor=None, flags=0):
         """decodes JPEG memory buffer to numpy array."""
         handle = self.__init_decompress()
         try:
-            if scaling_factor is not None and \
-                    scaling_factor not in self.__scaling_factors:
-                raise ValueError('supported scaling factors are ' +
-                                 str(self.__scaling_factors))
+            if (
+                scaling_factor is not None
+                and scaling_factor not in self.__scaling_factors
+            ):
+                raise ValueError(
+                    "supported scaling factors are " + str(self.__scaling_factors)
+                )
             pixel_size = [3, 3, 4, 4, 4, 4, 1, 4, 4, 4, 4, 4]
             width = c_int()
             height = c_int()
@@ -188,34 +226,58 @@ class TurboJPEG(object):
             jpeg_array = np.frombuffer(jpeg_buf, dtype=np.uint8)
             src_addr = self.__getaddr(jpeg_array)
             status = self.__decompress_header(
-                handle, src_addr, jpeg_array.size, byref(width), byref(height),
-                byref(jpeg_subsample), byref(jpeg_colorspace))
+                handle,
+                src_addr,
+                jpeg_array.size,
+                byref(width),
+                byref(height),
+                byref(jpeg_subsample),
+                byref(jpeg_colorspace),
+            )
             if status != 0:
                 self.__report_error(handle)
             scaled_width = width.value
             scaled_height = height.value
             if scaling_factor is not None:
+
                 def get_scaled_value(dim, num, denom):
                     return (dim * num + denom - 1) // denom
 
                 scaled_width = get_scaled_value(
-                    scaled_width, scaling_factor[0], scaling_factor[1])
+                    scaled_width, scaling_factor[0], scaling_factor[1]
+                )
                 scaled_height = get_scaled_value(
-                    scaled_height, scaling_factor[0], scaling_factor[1])
+                    scaled_height, scaling_factor[0], scaling_factor[1]
+                )
             img_array = np.empty(
-                [scaled_height, scaled_width, pixel_size[pixel_format]],
-                dtype=np.uint8)
+                [scaled_height, scaled_width, pixel_size[pixel_format]], dtype=np.uint8
+            )
             dest_addr = self.__getaddr(img_array)
             status = self.__decompress(
-                handle, src_addr, jpeg_array.size, dest_addr, scaled_width,
-                0, scaled_height, pixel_format, flags)
+                handle,
+                src_addr,
+                jpeg_array.size,
+                dest_addr,
+                scaled_width,
+                0,
+                scaled_height,
+                pixel_format,
+                flags,
+            )
             if status != 0:
                 self.__report_error(handle)
             return img_array
         finally:
             self.__destroy(handle)
 
-    def encode(self, img_array, quality=85, pixel_format=TJPF_BGR, jpeg_subsample=TJSAMP_422, flags=0):
+    def encode(
+        self,
+        img_array,
+        quality=85,
+        pixel_format=TJPF_BGR,
+        jpeg_subsample=TJSAMP_422,
+        flags=0,
+    ):
         """encodes numpy array to JPEG memory buffer."""
         handle = self.__init_compress()
         try:
@@ -224,8 +286,18 @@ class TurboJPEG(object):
             height, width, _ = img_array.shape
             src_addr = self.__getaddr(img_array)
             status = self.__compress(
-                handle, src_addr, width, img_array.strides[0], height, pixel_format,
-                byref(jpeg_buf), byref(jpeg_size), jpeg_subsample, quality, flags)
+                handle,
+                src_addr,
+                width,
+                img_array.strides[0],
+                height,
+                pixel_format,
+                byref(jpeg_buf),
+                byref(jpeg_size),
+                jpeg_subsample,
+                quality,
+                flags,
+            )
             if status != 0:
                 self.__report_error(handle)
             dest_buf = create_string_buffer(jpeg_size.value)
@@ -255,37 +327,38 @@ class TurboJPEG(object):
 
     def __find_turbojpeg(self):
         """returns default turbojpeg library path if possible"""
-        lib_path = find_library('turbojpeg')
+        lib_path = find_library("turbojpeg")
         if lib_path is not None:
             return lib_path
         for lib_path in DEFAULT_LIB_PATHS[platform.system()]:
             if os.path.exists(lib_path):
                 return lib_path
-        if platform.system() == 'Linux' and 'LD_LIBRARY_PATH' in os.environ:
-            ld_library_path = os.environ['LD_LIBRARY_PATH']
-            for path in ld_library_path.split(':'):
-                lib_path = os.path.join(path, 'libturbojpeg.so.0')
+        if platform.system() == "Linux" and "LD_LIBRARY_PATH" in os.environ:
+            ld_library_path = os.environ["LD_LIBRARY_PATH"]
+            for path in ld_library_path.split(":"):
+                lib_path = os.path.join(path, "libturbojpeg.so.0")
                 if os.path.exists(lib_path):
                     return lib_path
         raise RuntimeError(
-            'Unable to locate turbojpeg library automatically. '
-            'You may specify the turbojpeg library path manually.\n'
-            'e.g. jpeg = TurboJPEG(lib_path)')
+            "Unable to locate turbojpeg library automatically. "
+            "You may specify the turbojpeg library path manually.\n"
+            "e.g. jpeg = TurboJPEG(lib_path)"
+        )
 
     def __getaddr(self, nda):
         """returns the memory address for a given ndarray"""
-        return cast(nda.__array_interface__['data'][0], POINTER(c_ubyte))
+        return cast(nda.__array_interface__["data"][0], POINTER(c_ubyte))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     jpeg = TurboJPEG()
-    in_file = open('input.jpg', 'rb')
+    in_file = open("input.jpg", "rb")
     img_array = jpeg.decode(in_file.read())
     in_file.close()
-    out_file = open('output.jpg', 'wb')
+    out_file = open("output.jpg", "wb")
     out_file.write(jpeg.encode(img_array))
     out_file.close()
     import cv2
 
-    cv2.imshow('image', img_array)
+    cv2.imshow("image", img_array)
     cv2.waitKey(0)

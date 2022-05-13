@@ -26,7 +26,7 @@ class Detector:
         bbox[2] = min(image.shape[1], center[0] + face_width // 2)
         bbox[3] = min(image.shape[0], center[1] + face_height // 2)
         bbox = bbox.astype(np.int)
-        crop_image = image[bbox[1]:bbox[3], bbox[0]:bbox[2], :]
+        crop_image = image[bbox[1] : bbox[3], bbox[0] : bbox[2], :]
         h, w, _ = crop_image.shape
         crop_image = cv2.resize(crop_image, self.detection_size)
         return crop_image, ([h, w, bbox[1], bbox[0]])

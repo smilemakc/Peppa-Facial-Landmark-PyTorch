@@ -19,7 +19,7 @@ path/                                    # main folder
 
 def print_args(arguments):
     for arg in vars(arguments):
-        s = arg + ': ' + str(getattr(arguments, arg))
+        s = arg + ": " + str(getattr(arguments, arg))
         logging.info(s)
 
 
@@ -28,7 +28,7 @@ def calculate_nme(gt_lands, checked_lands, dist, n_points):
     for gt, ch in zip(gt_lands, checked_lands):
         x0, y0 = gt
         x1, y1 = ch
-        point_error = m.sqrt((x1 - x0)**2 + (y1 - y0)**2) / dist
+        point_error = m.sqrt((x1 - x0) ** 2 + (y1 - y0) ** 2) / dist
         points_errors.append(point_error)
     return np.sum(points_errors) / n_points
 
@@ -44,7 +44,7 @@ def compare_detectors(gt_path, ch_path, idx, bench):
     for filename in os.listdir(ch_path):
         if filename.endswith(".npy"):
             name = filename.replace("image_train_", "").replace(".npy", "")
-            name = name.replace(idx+"_", "")
+            name = name.replace(idx + "_", "")
             checked = np.load(os.path.join(ch_path, filename))
             nme = calculate_nme(gt, checked, args.distance, args.points_number)
             # logging.info(f"NME for {name} at {idx}: {nme}")
@@ -83,23 +83,15 @@ def get_benchmark():
     bdf.to_csv(args.output)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument('--path',
-                        default='',
-                        type=str)
-    parser.add_argument('-d', '--distance',
-                        default=450,
-                        help='equal size')
-    parser.add_argument('--points_number',
-                        default=68,
-                        help='number of points')
-    parser.add_argument('--det_number',
-                        default=4,
-                        help='number of compared detectors')
-    parser.add_argument('-o', '--output',
-                        default='result.csv',
-                        help='path to save the table of results')
+    parser.add_argument("--path", default="", type=str)
+    parser.add_argument("-d", "--distance", default=450, help="equal size")
+    parser.add_argument("--points_number", default=68, help="number of points")
+    parser.add_argument("--det_number", default=4, help="number of compared detectors")
+    parser.add_argument(
+        "-o", "--output", default="result.csv", help="path to save the table of results"
+    )
     args = parser.parse_args()
     # print_args(args)
 

@@ -47,7 +47,16 @@ def flip_points(landmarks):
     return result.astype(np.int)
 
 
-subsets = ["AFW", "AFW_Flip", "HELEN", "HELEN_Flip", "IBUG", "IBUG_Flip", "LFPW", "LFPW_Flip"]
+subsets = [
+    "AFW",
+    "AFW_Flip",
+    "HELEN",
+    "HELEN_Flip",
+    "IBUG",
+    "IBUG_Flip",
+    "LFPW",
+    "LFPW_Flip",
+]
 
 base_path = "Downloads/datasets/300W_LP"
 output_base = "Downloads/datasets/300W_LP_Out"
@@ -63,8 +72,13 @@ for subset in subsets:
         out = open(output_mat_path, "w")
         out.write("version: 1\nn_points: 68\n{\n")
         mat = loadmat(
-            os.path.join(base_path, "landmarks", subset.replace("_Flip", ""), img_file.replace(".jpg", "_pts.mat")))[
-            'pts_2d']
+            os.path.join(
+                base_path,
+                "landmarks",
+                subset.replace("_Flip", ""),
+                img_file.replace(".jpg", "_pts.mat"),
+            )
+        )["pts_2d"]
         if "Flip" in subset:
             mat[:, 0] = 450 - mat[:, 0]
             mat = flip_points(mat)

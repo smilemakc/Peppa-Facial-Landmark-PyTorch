@@ -13,14 +13,26 @@ def Rotate_aug(src, angle, label=None, center=None, scale=1.0):
     M = cv2.getRotationMatrix2D(center, angle, scale)
     if label is None:
         for i in range(image.shape[2]):
-            image[:, :, i] = cv2.warpAffine(image[:, :, i], M, (w, h), flags=cv2.INTER_CUBIC,
-                                            borderMode=cv2.BORDER_CONSTANT, borderValue=[127.,127.,127.])
+            image[:, :, i] = cv2.warpAffine(
+                image[:, :, i],
+                M,
+                (w, h),
+                flags=cv2.INTER_CUBIC,
+                borderMode=cv2.BORDER_CONSTANT,
+                borderValue=[127.0, 127.0, 127.0],
+            )
         return image, None
     else:
         label = label.T
         full_M = np.row_stack((M, np.asarray([0, 0, 1])))
-        img_rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT,
-                                     borderValue=[127.,127.,127.])
+        img_rotated = cv2.warpAffine(
+            image,
+            M,
+            (w, h),
+            flags=cv2.INTER_CUBIC,
+            borderMode=cv2.BORDER_CONSTANT,
+            borderValue=[127.0, 127.0, 127.0],
+        )
         full_label = np.row_stack((label, np.ones(shape=(1, label.shape[1]))))
         label_rotated = np.dot(full_M, full_label)
         label_rotated = label_rotated[0:2, :]
@@ -51,7 +63,12 @@ def point_to_box(points):
     boxes = []
     points = points.reshape([-1, 4, 2])
     for i in range(points.shape[0]):
-        box = [np.min(points[i][:, 0]), np.min(points[i][:, 1]), np.max(points[i][:, 0]), np.max(points[i][:, 1])]
+        box = [
+            np.min(points[i][:, 0]),
+            np.min(points[i][:, 1]),
+            np.max(points[i][:, 0]),
+            np.max(points[i][:, 1]),
+        ]
         boxes.append(box)
     return np.array(boxes)
 
@@ -64,18 +81,27 @@ def Rotate_with_box(src, angle, boxes=None, center=None, scale=1.0):
         center = (w / 2, h / 2)
     M = cv2.getRotationMatrix2D(center, angle, scale)
     new_size = Rotate_coordinate(np.array([[0, w, w, 0], [0, 0, h, h]]), M)
-    new_h, new_w = np.max(new_size[1]) - np.min(new_size[1]), np.max(new_size[0]) - np.min(new_size[0])
+    new_h, new_w = np.max(new_size[1]) - np.min(new_size[1]), np.max(
+        new_size[0]
+    ) - np.min(new_size[0])
     scale = min(h / new_h, w / new_w)
     M = cv2.getRotationMatrix2D(center, angle, scale)
     if boxes is None:
         for i in range(image.shape[2]):
-            image[:, :, i] = cv2.warpAffine(image[:, :, i], M, (w, h), flags=cv2.INTER_CUBIC,
-                                            borderMode=cv2.BORDER_CONSTANT)
+            image[:, :, i] = cv2.warpAffine(
+                image[:, :, i],
+                M,
+                (w, h),
+                flags=cv2.INTER_CUBIC,
+                borderMode=cv2.BORDER_CONSTANT,
+            )
         return image, None
     else:
         label = label.T
         full_M = np.row_stack((M, np.asarray([0, 0, 1])))
-        img_rotated = cv2.warpAffine(image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT)
+        img_rotated = cv2.warpAffine(
+            image, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_CONSTANT
+        )
         full_label = np.row_stack((label, np.ones(shape=(1, label.shape[1]))))
         label_rotated = np.dot(full_M, full_label)
         label_rotated = label_rotated[0:2, :]
@@ -107,8 +133,13 @@ def Affine_aug(src, strength, label=None):
     pts1 = np.random.rand(3, 2) * random.uniform(-strength, strength) + pts_base
     pts1 = pts1.astype(np.float32)
     M = cv2.getAffineTransform(pts1, pts_base)
-    trans_img = cv2.warpAffine(image, M, (image.shape[1], image.shape[0]), borderMode=cv2.BORDER_CONSTANT,
-                               borderValue=[127.,127.,127.])
+    trans_img = cv2.warpAffine(
+        image,
+        M,
+        (image.shape[1], image.shape[0]),
+        borderMode=cv2.BORDER_CONSTANT,
+        borderValue=[127.0, 127.0, 127.0],
+    )
     label_rotated = None
     if label is not None:
         label = label.T
@@ -125,15 +156,15 @@ def Padding_aug(src, max_pattern_ratio=0.05):
     height, width, _ = src.shape
     if random.uniform(0, 1) > 0.5:
         if random.uniform(0, 1) > 0.5:
-            pattern[0:int(ratio * height), :, :] = 0
+            pattern[0 : int(ratio * height), :, :] = 0
         else:
-            pattern[height - int(ratio * height):, :, :] = 0
+            pattern[height - int(ratio * height) :, :, :] = 0
     else:
         if random.uniform(0, 1) > 0.5:
-            pattern[:, 0:int(ratio * width), :] = 0
+            pattern[:, 0 : int(ratio * width), :] = 0
         else:
-            pattern[:, width - int(ratio * width):, :] = 0
-    bias_pattern = (1 - pattern) * [127.,127.,127.]
+            pattern[:, width - int(ratio * width) :, :] = 0
+    bias_pattern = (1 - pattern) * [127.0, 127.0, 127.0]
     img = src * pattern + bias_pattern
     img = img.astype(np.uint8)
     return img
@@ -165,7 +196,9 @@ def Img_dropout(src, max_pattern_ratio=0.05):
     width_end = int(width_start + block_width)
     height_start = int(random.uniform(0, height - block_height))
     height_end = int(height_start + block_height)
-    src[height_start:height_end, width_start:width_end, :] = np.array([127.,127.,127.], dtype=src.dtype)
+    src[height_start:height_end, width_start:width_end, :] = np.array(
+        [127.0, 127.0, 127.0], dtype=src.dtype
+    )
     return src
 
 
@@ -175,18 +208,30 @@ def Fill_img(img_raw, target_height, target_width, label=None):
     raw_width = img_raw.shape[1]
     if raw_width / raw_height >= target_width / target_height:
         shape_need = [int(target_height / target_width * raw_width), raw_width, channel]
-        img_fill = np.zeros(shape_need, dtype=img_raw.dtype) + np.array([127.,127.,127.], dtype=img_raw.dtype)
+        img_fill = np.zeros(shape_need, dtype=img_raw.dtype) + np.array(
+            [127.0, 127.0, 127.0], dtype=img_raw.dtype
+        )
         shift_x = (img_fill.shape[1] - raw_width) // 2
         shift_y = (img_fill.shape[0] - raw_height) // 2
         for i in range(channel):
-            img_fill[shift_y:raw_height + shift_y, shift_x:raw_width + shift_x, i] = img_raw[:, :, i]
+            img_fill[
+                shift_y : raw_height + shift_y, shift_x : raw_width + shift_x, i
+            ] = img_raw[:, :, i]
     else:
-        shape_need = [raw_height, int(target_width / target_height * raw_height), channel]
-        img_fill = np.zeros(shape_need, dtype=img_raw.dtype) + np.array([127.,127.,127.], dtype=img_raw.dtype)
+        shape_need = [
+            raw_height,
+            int(target_width / target_height * raw_height),
+            channel,
+        ]
+        img_fill = np.zeros(shape_need, dtype=img_raw.dtype) + np.array(
+            [127.0, 127.0, 127.0], dtype=img_raw.dtype
+        )
         shift_x = (img_fill.shape[1] - raw_width) // 2
         shift_y = (img_fill.shape[0] - raw_height) // 2
         for i in range(channel):
-            img_fill[shift_y:raw_height + shift_y, shift_x:raw_width + shift_x, i] = img_raw[:, :, i]
+            img_fill[
+                shift_y : raw_height + shift_y, shift_x : raw_width + shift_x, i
+            ] = img_raw[:, :, i]
     if label is None:
         return img_fill, shift_x, shift_y
     else:
@@ -199,11 +244,18 @@ def Random_crop(src, shrink):
     h, w, _ = src.shape
     h_shrink = int(h * shrink)
     w_shrink = int(w * shrink)
-    bimg = cv2.copyMakeBorder(src, h_shrink, h_shrink, w_shrink, w_shrink, borderType=cv2.BORDER_CONSTANT,
-                              value=(0, 0, 0))
+    bimg = cv2.copyMakeBorder(
+        src,
+        h_shrink,
+        h_shrink,
+        w_shrink,
+        w_shrink,
+        borderType=cv2.BORDER_CONSTANT,
+        value=(0, 0, 0),
+    )
     start_h = random.randint(0, 2 * h_shrink)
     start_w = random.randint(0, 2 * w_shrink)
-    target_img = bimg[start_h:start_h + h, start_w:start_w + w, :]
+    target_img = bimg[start_h : start_h + h, start_w : start_w + w, :]
     return target_img
 
 
@@ -232,13 +284,13 @@ def Random_scale_withbbox(image, bboxes, target_shape, jitter=0.5):
     hi, wi, _ = image.shape
     while 1:
         if len(bboxes) == 0:
-            print('errrrrrr')
+            print("errrrrrr")
         bboxes_ = np.array(bboxes)
         crop_h = int(hi * random.uniform(0.2, 1))
         crop_w = int(wi * random.uniform(0.2, 1))
         start_h = random.randint(0, hi - crop_h)
         start_w = random.randint(0, wi - crop_w)
-        croped = image[start_h:start_h + crop_h, start_w:start_w + crop_w, :]
+        croped = image[start_h : start_h + crop_h, start_w : start_w + crop_w, :]
         bboxes_[:, 0] = bboxes_[:, 0] - start_w
         bboxes_[:, 1] = bboxes_[:, 1] - start_h
         bboxes_[:, 2] = bboxes_[:, 2] - start_w
@@ -256,7 +308,7 @@ def Random_scale_withbbox(image, bboxes, target_shape, jitter=0.5):
     new_image = np.zeros(shape=[h, w, 3], dtype=np.uint8)
     dx = int(random.randint(0, w - rescale_w))
     dy = int(random.randint(0, h - rescale_h))
-    new_image[dy:dy + rescale_h, dx:dx + rescale_w, :] = image
+    new_image[dy : dy + rescale_h, dx : dx + rescale_w, :] = image
     bboxes_fix[:, 0] = bboxes_fix[:, 0] * rescale_w / croped_w + dx
     bboxes_fix[:, 1] = bboxes_fix[:, 1] * rescale_h / croped_h + dy
     bboxes_fix[:, 2] = bboxes_fix[:, 2] * rescale_w / croped_w + dx
@@ -311,14 +363,18 @@ def produce_heat_maps(label, map_size, stride, sigma):
         heatmap = np.exp(-exponent)
         am = np.amax(heatmap)
         if am > 0:
-            heatmap /= am / 255.
+            heatmap /= am / 255.0
         return heatmap
 
     all_keypoints = label
     point_num = all_keypoints.shape[0]
-    heatmaps_this_img = np.zeros([map_size[0] // stride, map_size[1] // stride, point_num])
+    heatmaps_this_img = np.zeros(
+        [map_size[0] // stride, map_size[1] // stride, point_num]
+    )
     for k in range(point_num):
-        heatmap = produce_heat_map([all_keypoints[k][0], all_keypoints[k][1]], map_size, stride, sigma)
+        heatmap = produce_heat_map(
+            [all_keypoints[k][0], all_keypoints[k][1]], map_size, stride, sigma
+        )
         heatmaps_this_img[:, :, k] = heatmap
     return heatmaps_this_img
 
@@ -329,8 +385,8 @@ def visualize_heatmap_target(heatmap):
     heat_ = np.zeros([map_size[0], map_size[1]])
     for i in range(frame_num):
         heat_ = heat_ + heatmap[:, :, i]
-    cv2.namedWindow('heat_map', 0)
-    cv2.imshow('heat_map', heat_)
+    cv2.namedWindow("heat_map", 0)
+    cv2.imshow("heat_map", heat_)
     cv2.waitKey(0)
 
 
@@ -339,29 +395,40 @@ def produce_heatmaps_with_bbox(image, label, h_out, w_out, num_klass, ksize=9, s
     h, w, _ = image.shape
     for single_box in label:
         if single_box[4] >= 0:
-            center = [(single_box[0] + single_box[2]) / 2 / w, (single_box[1] + single_box[3]) / 2 / h]  ###0-1
-            heatmap[round(center[1] * h_out), round(center[0] * w_out), int(single_box[4])] = 1.
+            center = [
+                (single_box[0] + single_box[2]) / 2 / w,
+                (single_box[1] + single_box[3]) / 2 / h,
+            ]  ###0-1
+            heatmap[
+                round(center[1] * h_out), round(center[0] * w_out), int(single_box[4])
+            ] = 1.0
     heatmap = cv2.GaussianBlur(heatmap, (ksize, ksize), sigma)
     am = np.amax(heatmap)
     if am > 0:
-        heatmap /= am / 255.
+        heatmap /= am / 255.0
     heatmap = np.expand_dims(heatmap, -1)
     return heatmap
 
 
-def produce_heatmaps_with_keypoint(image, label, h_out, w_out, num_klass, ksize=7, sigma=0):
+def produce_heatmaps_with_keypoint(
+    image, label, h_out, w_out, num_klass, ksize=7, sigma=0
+):
     heatmap = np.zeros(shape=[h_out, w_out, num_klass])
     h, w, _ = image.shape
     for i in range(label.shape[0]):
         single_point = label[i]
         if single_point[0] > 0 and single_point[1] > 0:
-            heatmap[int(single_point[1] * (h_out - 1)), int(single_point[0] * (w_out - 1)), i] = 1.
+            heatmap[
+                int(single_point[1] * (h_out - 1)),
+                int(single_point[0] * (w_out - 1)),
+                i,
+            ] = 1.0
     heatmap = cv2.GaussianBlur(heatmap, (ksize, ksize), sigma)
     am = np.amax(heatmap)
     if am > 0:
-        heatmap /= am / 255.
+        heatmap /= am / 255.0
     return heatmap
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     pass

@@ -42,7 +42,9 @@ def hard_nms(box_scores, iou_threshold, top_k=-1, candidate_size=200):
     return box_scores[picked, :]
 
 
-def predict(width, height, confidences, boxes, prob_threshold, iou_threshold=0.3, top_k=-1):
+def predict(
+    width, height, confidences, boxes, prob_threshold, iou_threshold=0.3, top_k=-1
+):
     boxes = boxes[0]
     confidences = confidences[0]
     picked_box_probs = []
@@ -55,10 +57,11 @@ def predict(width, height, confidences, boxes, prob_threshold, iou_threshold=0.3
             continue
         subset_boxes = boxes[mask, :]
         box_probs = np.concatenate([subset_boxes, probs.reshape(-1, 1)], axis=1)
-        box_probs = hard_nms(box_probs,
-                             iou_threshold=iou_threshold,
-                             top_k=top_k,
-                             )
+        box_probs = hard_nms(
+            box_probs,
+            iou_threshold=iou_threshold,
+            top_k=top_k,
+        )
         picked_box_probs.append(box_probs)
         picked_labels.extend([class_index] * box_probs.shape[0])
     if not picked_box_probs:
@@ -68,7 +71,11 @@ def predict(width, height, confidences, boxes, prob_threshold, iou_threshold=0.3
     picked_box_probs[:, 1] *= height
     picked_box_probs[:, 2] *= width
     picked_box_probs[:, 3] *= height
-    return picked_box_probs[:, :4].astype(np.int32), np.array(picked_labels), picked_box_probs[:, 4]
+    return (
+        picked_box_probs[:, :4].astype(np.int32),
+        np.array(picked_labels),
+        picked_box_probs[:, 4],
+    )
 
 
 class Detector:
@@ -88,5 +95,7 @@ class Detector:
         time_time = time.time()
         confidences, boxes = self.sess.run(None, {self.input_name: image})
         print("Face Detector inference time:{}".format(time.time() - time_time))
-        boxes, labels, probs = predict(orig_image.shape[1], orig_image.shape[0], confidences, boxes, 0.8)
+        boxes, labels, probs = predict(
+            orig_image.shape[1], orig_image.shape[0], confidences, boxes, 0.8
+        )
         return boxes, probs

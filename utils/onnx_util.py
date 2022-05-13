@@ -12,19 +12,23 @@ x = torch.randn(1, 3, 160, 160)
 model = SlimScore()
 model = torch.nn.DataParallel(model)
 model.load_state_dict(
-    torch.load("/Users/balashov/Documents/landmarks/simpleface/slim_score_1207_batch64_160x160_epoch_99_0.0992.pth",
-               map_location="cpu"))
+    torch.load(
+        "/Users/balashov/Documents/landmarks/simpleface/slim_score_1207_batch64_160x160_epoch_99_0.0992.pth",
+        map_location="cpu",
+    )
+)
 model.eval()
 torch.onnx.export(
     model.module,
     x,
     "../pretrained_weights/slim-score_160_0.0992_out_as_dict2.onnx",
     input_names=["input1"],
-    output_names={"landmarks": [1, 136],
-                  "pose": [1, 3],
-                  "expressions": [1, 4],
-                  "score": [1, 1],
-                  }
+    output_names={
+        "landmarks": [1, 136],
+        "pose": [1, 3],
+        "expressions": [1, 4],
+        "score": [1, 1],
+    },
 )
 
 # import tensorflow as tf
