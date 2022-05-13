@@ -99,7 +99,7 @@ class Landmark(Dataset):
             image = jpeg.imread(image_path)
         else:
             image = cv2.imread(image_path)
-        if not image or not image.size:
+        if image is None or not image.size:
             logger.warning(f"empty image at {image_path}")
             is_last = item + 1 == len(self.items)
             item = 0 if is_last else item + 1
