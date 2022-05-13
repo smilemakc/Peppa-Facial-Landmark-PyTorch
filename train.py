@@ -10,6 +10,7 @@ import visdom
 import numpy as np
 from benchmarks_nme import calculate_nme
 import argparse
+from tqdm import tqdm
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--input_size", default=160, type=int)
@@ -201,7 +202,8 @@ def train(epoch):
     viz.line([list(optimizer.param_groups)[0]['lr']], [epoch], win="lr",
              update="append")
     scores = []
-    for i, (imgs, labels) in enumerate(train_loader):
+    progress = tqdm(train_loader)
+    for imgs, labels in progress:
         imgs = imgs.to(device)
         labels = labels.to(device)
         optimizer.zero_grad()
@@ -226,11 +228,11 @@ def train(epoch):
         total_samples += len(imgs)
         end = time.time()
         speed = (i + 1) / (end - start)
-        progress = total_samples / len(train_dataset)
+        progress = total_samples / len(train_loader)
         rewrite(
             "Epoch: {} Acc -- {:.4f}; Loss -- Total: {:.4f} Landmark: {:.4f} "
             "Pose: {:.4f} LEye: {:.4f} REye: {:.4f} Mouth: {:.4f} "
-            "Score: {:.4f} Progress: {:.4f} Speed: {:.4f}it/s {:.4f}".format(
+            "Score: {:.4f} Progress: {:.4f} Speed: {:.4f}it/s {}".format(
                 epoch,
                 total_acc.item(),
                 loss.item(),
@@ -242,7 +244,7 @@ def train(epoch):
                 score_loss.item(),
                 progress,
                 speed,
-                len(train_dataset)
+                f"{len(train_loader)}/{i}"
             )
         )
 

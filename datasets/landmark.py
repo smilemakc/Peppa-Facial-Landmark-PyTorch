@@ -1,3 +1,4 @@
+import logging
 from torch.utils.data import Dataset
 from utils.visual_augmentation import ColorDistort, pixel_jitter
 import numpy as np
@@ -59,6 +60,9 @@ class Landmark(Dataset):
                 # image = cv2.imread(fname)
             else:
                 image = cv2.imread(fname)
+            
+            if not image or not image.size:
+                logging.getLogger("train").warning(f"empty image {fname}")
             label = np.array(keypoints, dtype=np.float).reshape((-1, 2))
             bbox = np.array(bbox)
             # print("image", type(image), fname)
