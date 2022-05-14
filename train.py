@@ -163,21 +163,21 @@ class Metrics:
         return total, lands, pose, leye, reye, mouth, score, acc
 
 
-def calculate_loss(predict_keypoints, label_keypoints, accuracy):
-    landmark_label = label_keypoints[:, 0:136]
-    pose_label = label_keypoints[:, 136:139]
-    leye_cls_label = label_keypoints[:, 139]
-    reye_cls_label = label_keypoints[:, 140]
-    mouth_cls_label = label_keypoints[:, 141]
-    big_mouth_cls_label = label_keypoints[:, 142]
+def calculate_loss(predictions: torch.Tensor, gt_label: torch.Tensor, accuracy: np.ndarray):
+    landmark_label = gt_label[:, 0:136]
+    pose_label = gt_label[:, 136:139]
+    leye_cls_label = gt_label[:, 139]
+    reye_cls_label = gt_label[:, 140]
+    mouth_cls_label = gt_label[:, 141]
+    big_mouth_cls_label = gt_label[:, 142]
     score_label = torch.FloatTensor(accuracy).to(device)
-    landmark_predict = predict_keypoints[:, 0:136]
-    pose_predict = predict_keypoints[:, 136:139]
-    leye_cls_predict = predict_keypoints[:, 139]
-    reye_cls_predict = predict_keypoints[:, 140]
-    mouth_cls_predict = predict_keypoints[:, 141]
-    big_mouth_cls_predict = predict_keypoints[:, 142]
-    score_predict = predict_keypoints[:, 143]
+    landmark_predict = predictions[:, 0:136]
+    pose_predict = predictions[:, 136:139]
+    leye_cls_predict = predictions[:, 139]
+    reye_cls_predict = predictions[:, 140]
+    mouth_cls_predict = predictions[:, 141]
+    big_mouth_cls_predict = predictions[:, 142]
+    score_predict = predictions[:, 143]
     landmark_loss = 2 * wing_loss_fn(landmark_predict, landmark_label)
     loss_pose = mse_loss_fn(pose_predict, pose_label)
     leye_loss = 0.8 * bce_loss_fn(leye_cls_predict, leye_cls_label)
@@ -200,11 +200,11 @@ def calculate_loss(predict_keypoints, label_keypoints, accuracy):
     )
 
 
-def calculate_accuracy(predict_keypoints, label_keypoints, sz, normolization=False):
+def calculate_accuracy(predictions: dict, gt_label: np.ndarray, sz, normolization=False):
     if not normolization:
         sz = 1
-    landmark_label = label_keypoints[:, 0:136]
-    landmark_predict = predict_keypoints[:, 0:136]
+    landmark_label = gt_label[:, 0:136]
+    landmark_predict = predictions[:, 0:136]
     n = landmark_label.shape[1] / 2
     nme_all = []
     for label, predict in zip(landmark_label, landmark_predict):
@@ -212,7 +212,7 @@ def calculate_accuracy(predict_keypoints, label_keypoints, sz, normolization=Fal
         predict = predict.reshape((-1, 2))
         nme = calculate_nme(label, predict, sz, n)
         nme_all.append(1 - nme)
-    return nme_all, np.mean(nme_all)
+    return np.array(nme_all), np.mean(nme_all)
 
 
 def train(epoch):
