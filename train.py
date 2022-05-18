@@ -1,5 +1,6 @@
 import argparse
 import time
+from pathlib import Path
 
 import numpy as np
 import torch
@@ -10,6 +11,7 @@ from tqdm import tqdm
 from benchmarks_nme import calculate_nme
 from datasets.landmark import Landmark
 from models.slim import SlimScore
+from utils.io import download_file_and_unzip
 from utils.wing_loss import WingLoss
 
 parser = argparse.ArgumentParser()
@@ -20,7 +22,10 @@ parser.add_argument("--num_workers", default=4, type=int)
 parser.add_argument("--num_epochs", default=300, type=int)
 parser.add_argument("--lr", default=0.00001, type=float, help="base learning rate")
 parser.add_argument(
-    "--scheduler", default="custom_torch", type=str, help="custom_torch || custom_tf"
+    "--scheduler",
+    default="custom_own",
+    type=str,
+    help="custom_torch || custom_tf || custom_own",
 )
 parser.add_argument("--device", default="cuda", help="device (cpu, cuda or cuda_ids)")
 parser.add_argument(
@@ -163,7 +168,9 @@ class Metrics:
         return total, lands, pose, leye, reye, mouth, score, acc
 
 
-def calculate_loss(predictions: torch.Tensor, gt_label: torch.Tensor, accuracy: np.ndarray):
+def calculate_loss(
+    predictions: torch.Tensor, gt_label: torch.Tensor, accuracy: np.ndarray
+):
     landmark_label = gt_label[:, 0:136]
     pose_label = gt_label[:, 136:139]
     leye_cls_label = gt_label[:, 139]
@@ -200,7 +207,9 @@ def calculate_loss(predictions: torch.Tensor, gt_label: torch.Tensor, accuracy: 
     )
 
 
-def calculate_accuracy(predictions: dict, gt_label: np.ndarray, sz, normolization=False):
+def calculate_accuracy(
+    predictions: dict, gt_label: np.ndarray, sz, normolization=False
+):
     if not normolization:
         sz = 1
     landmark_label = gt_label[:, 0:136]
@@ -435,13 +444,18 @@ def evaluate(epoch):
 
 
 if __name__ == "__main__":
+    base_ds_path = download_file_and_unzip(
+        "300VW_300V-LP_AFW_IBUG_LFPW_CROPPED.tar.gz",
+        "https://storage.googleapis.com/vbg_datasets/300VW_300V-LP_AFW_IBUG_LFPW_CROPPED.tar.gz"
+    )
+    ds_path = base_ds_path / "300VW_300V-LP_AFW_IBUG_LFPW_CROPPED"
     torch.backends.cudnn.benchmark = True
-    train_dataset = Landmark("train.json", input_size, True)
+    train_dataset = Landmark(ds_path / "train.json", input_size, True)
 
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=args.num_workers
     )
-    val_dataset = Landmark("val.json", input_size, False)
+    val_dataset = Landmark(ds_path / "val.json", input_size, False)
     val_loader = DataLoader(
         val_dataset, batch_size=batch_size, shuffle=False, num_workers=args.num_workers
     )
