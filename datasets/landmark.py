@@ -93,7 +93,7 @@ class Landmark(Dataset):
         """Data augmentation function."""
         dp = self.items[item]
         image_path = dp["image_path"]
-        keypoints = dp["keypoints"]
+        landmarks = dp["landmarks"]
         bbox = dp["bbox"]
         if Path(image_path).suffix.lower() in (".jpg", ".jpeg"):
             image = jpeg.imread(image_path)
@@ -104,7 +104,7 @@ class Landmark(Dataset):
             is_last = item + 1 == len(self.items)
             item = 0 if is_last else item + 1
             return self[item]
-        label = np.array(keypoints, dtype=np.float).reshape((-1, 2))
+        label = np.array(landmarks, dtype=np.float).reshape((-1, 2))
         bbox = np.array(bbox)
         crop_image, label = self.augmentation_crop(
             image, bbox, label, self.training_flag

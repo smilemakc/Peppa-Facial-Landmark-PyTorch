@@ -45,7 +45,7 @@ for pic_path in tqdm(pic_list):
     one_image_ann["image_path"] = pic_path.as_posix()
     pts_path = pic_path.parent / pic_path.name.replace(pic_path.suffix, ".pts")
     label = pts_reader.read(pts_path).reshape((-1, 2))
-    one_image_ann["keypoints"] = label
+    one_image_ann["landmarks"] = label
     bbox = [
         float(np.min(label[:, 0])),
         float(np.min(label[:, 1])),

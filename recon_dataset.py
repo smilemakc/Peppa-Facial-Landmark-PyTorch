@@ -25,7 +25,7 @@ def do(filename):
     result = []
     for data in tqdm(gogo):
         image_path = Path(data["image_path"])
-        landmarks = np.array(data["keypoints"])
+        landmarks = np.array(data["landmarks"])
         bbox = np.array(data["bbox"])
         img = cv2.imread(image_path.as_posix())
         img_h, img_w = img.shape[0], img.shape[1]
@@ -45,7 +45,7 @@ def do(filename):
         bbox[0:2] = bbox[0:2] - new_bbox[0:2]
         bbox[2:4] = bbox[2:4] - new_bbox[0:2]
         data["bbox"] = bbox.tolist()
-        data["keypoints"] = landmarks.tolist()
+        data["landmarks"] = landmarks.tolist()
         img = img[new_bbox[1] : new_bbox[3], new_bbox[0] : new_bbox[2]]
         output_path = rewrite_path(image_path)
         data["image_path"] = output_path.as_posix()
