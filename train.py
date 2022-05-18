@@ -450,7 +450,7 @@ if __name__ == "__main__":
             "300VW_300W-LP_AFW_IBUG_LFPW_CROPPED.tar.gz",
             "https://storage.googleapis.com/vbg_datasets/300VW_300W-LP_AFW_IBUG_LFPW_CROPPED.tar.gz"
     )
-    ds_path = base_ds_path / "300VW_300V-LP_AFW_IBUG_LFPW_CROPPED"
+    ds_path = base_ds_path / "300VW_300W-LP_AFW_IBUG_LFPW_CROPPED"
     torch.backends.cudnn.benchmark = True
     train_dataset = Landmark(ds_path / "train.json", input_size, True)
 
