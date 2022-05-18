@@ -77,10 +77,12 @@ class Landmark(Dataset):
     def __init__(
         self,
         annotation_file_path: Union[Path, str],
+        parent_path: Union[str, Path] = Path("data"),
         input_size=(160, 160),
         training_flag=True,
     ):
         super(Landmark, self).__init__()
+        self.parent_path = Path(parent_path)
         self.counter = 0
         self.time_counter = 0
         self.training_flag = training_flag
@@ -92,7 +94,7 @@ class Landmark(Dataset):
     def __getitem__(self, item):
         """Data augmentation function."""
         dp = self.items[item]
-        image_path = dp["image_path"]
+        image_path = (self.parent_path / dp["image_path"]).as_posix()
         landmarks = dp["landmarks"]
         bbox = dp["bbox"]
         if Path(image_path).suffix.lower() in (".jpg", ".jpeg"):
