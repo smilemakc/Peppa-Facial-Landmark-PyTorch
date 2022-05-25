@@ -131,14 +131,14 @@ class Metrics:
         self.counter = 0
 
     def update(
-        self,
-        landmark_loss,
-        loss_pose,
-        leye_loss,
-        reye_loss,
-        mouth_loss,
-        score_loss,
-        accuracy,
+            self,
+            landmark_loss,
+            loss_pose,
+            leye_loss,
+            reye_loss,
+            mouth_loss,
+            score_loss,
+            accuracy,
     ):
         self.landmark_loss += landmark_loss.item()
         self.loss_pose += loss_pose.item()
@@ -151,13 +151,13 @@ class Metrics:
 
     def summary(self):
         total = (
-            self.landmark_loss
-            + self.loss_pose
-            + self.leye_loss
-            + self.reye_loss
-            + self.mouth_loss
-            + self.score_loss
-        ) / self.counter
+                        self.landmark_loss
+                        + self.loss_pose
+                        + self.leye_loss
+                        + self.reye_loss
+                        + self.mouth_loss
+                        + self.score_loss
+                ) / self.counter
         lands = self.landmark_loss / self.counter
         pose = self.loss_pose / self.counter
         leye = self.leye_loss / self.counter
@@ -169,7 +169,7 @@ class Metrics:
 
 
 def calculate_loss(
-    predictions: torch.Tensor, gt_label: torch.Tensor, accuracy: np.ndarray
+        predictions: torch.Tensor, gt_label: torch.Tensor, accuracy: np.ndarray
 ):
     landmark_label = gt_label[:, 0:136]
     pose_label = gt_label[:, 136:139]
@@ -194,7 +194,7 @@ def calculate_loss(
     mouth_loss = 0.5 * (mouth_loss + mouth_loss_big)
     score_loss = mse_loss_fn(score_predict, score_label)
     loss_sum = (
-        landmark_loss + loss_pose + leye_loss + reye_loss + mouth_loss + score_loss
+            landmark_loss + loss_pose + leye_loss + reye_loss + mouth_loss + score_loss
     )
     return (
         loss_sum,
@@ -208,7 +208,7 @@ def calculate_loss(
 
 
 def calculate_accuracy(
-    predictions: dict, gt_label: np.ndarray, sz, normolization=False
+        predictions: dict, gt_label: np.ndarray, sz, normolization=False
 ):
     if not normolization:
         sz = 1
@@ -449,15 +449,17 @@ if __name__ == "__main__":
         base_ds_path = download_file_and_unzip(
             "300VW_300W-LP_AFW_IBUG_LFPW_CROPPED.tar.gz",
             "https://storage.googleapis.com/vbg_datasets/300VW_300W-LP_AFW_IBUG_LFPW_CROPPED.tar.gz"
-    )
+        )
     ds_path = base_ds_path / "300VW_300W-LP_AFW_IBUG_LFPW_CROPPED"
     torch.backends.cudnn.benchmark = True
-    train_dataset = Landmark(ds_path / "train.json", input_size, True)
+    train_dataset = Landmark(annotation_file_path=ds_path / "train.json", parent_path=base_ds_path,
+                             input_size=input_size, training_flag=True)
 
     train_loader = DataLoader(
         train_dataset, batch_size=batch_size, shuffle=True, num_workers=args.num_workers
     )
-    val_dataset = Landmark(ds_path / "val.json", input_size, False)
+    val_dataset = Landmark(annotation_file_path=ds_path / "val.json", parent_path=base_ds_path, input_size=input_size,
+                           training_flag=False)
     val_loader = DataLoader(
         val_dataset, batch_size=batch_size, shuffle=False, num_workers=args.num_workers
     )
